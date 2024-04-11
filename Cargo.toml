@@ -1,0 +1,16 @@
+[package]
+name = "jupiter-amm-interface"
+version = "0.3.3"
+license = "Apache-2.0"
+edition = "2021"
+description = "AMM interface to integrate a DEX into jupiter-core"
+keywords = ["solana", "jupiter", "aggregator"]
+
+[dependencies]
+solana-sdk = ">=1.13"
+solana-account-decoder = ">=1.13"
+anyhow = "1"
+serde_json = "1.0.114"
+serde = "1.0.197"
+rust_decimal = "1.26.1"
+borsh = ">=0.9, <1.0.0"
