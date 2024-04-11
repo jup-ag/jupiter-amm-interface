@@ -81,4 +81,9 @@ pub enum Swap {
     StakeDexPrefundWithdrawStakeAndDepositStake {
         bridge_stake_seed: u32,
     },
+    Clone {
+        pool_index: u8,
+        quantity_is_input: bool,
+        quantity_is_collateral: bool,
+    },
 }
