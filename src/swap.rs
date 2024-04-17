@@ -86,4 +86,18 @@ pub enum Swap {
         quantity_is_input: bool,
         quantity_is_collateral: bool,
     },
+    SanctumS {
+        src_lst_value_calc_accs: u8,
+        dst_lst_value_calc_accs: u8,
+        src_lst_index: u32,
+        dst_lst_index: u32,
+    },
+    SanctumSAddLiquidity {
+        lst_value_calc_accs: u8,
+        lst_index: u32,
+    },
+    SanctumSRemoveLiquidity {
+        lst_value_calc_accs: u8,
+        lst_index: u32,
+    },
 }
