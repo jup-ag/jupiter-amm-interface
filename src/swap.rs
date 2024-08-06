@@ -6,7 +6,7 @@ pub enum Side {
     Ask,
 }
 
-#[derive(BorshSerialize, Copy, Clone, Debug, PartialEq)]
+#[derive(BorshSerialize, Clone, Debug, PartialEq)]
 pub enum Swap {
     Saber,
     SaberAddDecimalsDeposit,
@@ -100,4 +100,39 @@ pub enum Swap {
         lst_value_calc_accs: u8,
         lst_index: u32,
     },
+    RaydiumCP,
+    WhirlpoolSwapV2 {
+        a_to_b: bool,
+        remaining_accounts_info: Option<RemainingAccountsInfo>,
+    },
+    OneIntro,
+    PumpdotfunWrappedBuy,
+    PumpdotfunWrappedSell,
+    PerpsV2Swap,
+    PerpsV2AddLiquidity,
+    PerpsV2RemoveLiquidity,
+}
+
+#[derive(BorshSerialize, Copy, Clone, PartialEq, Eq, Debug)]
+pub enum AccountsType {
+    TransferHookA,
+    TransferHookB,
+    // TransferHookReward,
+    // TransferHookInput,
+    // TransferHookIntermediate,
+    // TransferHookOutput,
+    //TickArray,
+    //TickArrayOne,
+    //TickArrayTwo,
+}
+
+#[derive(BorshSerialize, Clone, Debug, PartialEq)]
+pub struct RemainingAccountsSlice {
+    pub accounts_type: AccountsType,
+    pub length: u8,
+}
+
+#[derive(BorshSerialize, Clone, Debug, PartialEq)]
+pub struct RemainingAccountsInfo {
+    pub slices: Vec<RemainingAccountsSlice>,
 }
