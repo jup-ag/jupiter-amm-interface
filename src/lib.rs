@@ -3,7 +3,10 @@ use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use solana_account_decoder::{UiAccount, UiAccountEncoding};
+use solana_sdk::clock::Clock;
 use std::collections::HashSet;
+use std::sync::atomic::{AtomicI64, AtomicU64};
+use std::sync::Arc;
 use std::{collections::HashMap, convert::TryFrom, str::FromStr};
 mod swap;
 pub use swap::{Side, Swap};
@@ -97,9 +100,13 @@ pub fn try_get_account_data<'a>(account_map: &'a AccountMap, address: &Pubkey) -
         .with_context(|| format!("Could not find address: {address}"))
 }
 
+pub struct AmmContext {
+    pub clock_ref: ClockRef,
+}
+
 pub trait Amm {
     // Maybe trait was made too restrictive?
-    fn from_keyed_account(keyed_account: &KeyedAccount) -> Result<Self>
+    fn from_keyed_account(keyed_account: &KeyedAccount, amm_context: &AmmContext) -> Result<Self>
     where
         Self: Sized;
     /// A human readable label of the underlying DEX
@@ -228,5 +235,47 @@ impl TryFrom<KeyedUiAccount> for KeyedAccount {
             account,
             params,
         })
+    }
+}
+
+#[derive(Default, Clone)]
+pub struct ClockRef {
+    pub slot: Arc<AtomicU64>,
+    /// The timestamp of the first `Slot` in this `Epoch`.
+    pub epoch_start_timestamp: Arc<AtomicI64>,
+    /// The current `Epoch`.
+    pub epoch: Arc<AtomicU64>,
+    pub leader_schedule_epoch: Arc<AtomicU64>,
+    pub unix_timestamp: Arc<AtomicI64>,
+}
+
+impl ClockRef {
+    pub fn update(&self, clock: Clock) {
+        self.epoch
+            .store(clock.epoch, std::sync::atomic::Ordering::Relaxed);
+        self.slot
+            .store(clock.slot, std::sync::atomic::Ordering::Relaxed);
+        self.unix_timestamp
+            .store(clock.unix_timestamp, std::sync::atomic::Ordering::Relaxed);
+        self.epoch_start_timestamp.store(
+            clock.epoch_start_timestamp,
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        self.leader_schedule_epoch.store(
+            clock.leader_schedule_epoch,
+            std::sync::atomic::Ordering::Relaxed,
+        );
+    }
+}
+
+impl From<Clock> for ClockRef {
+    fn from(clock: Clock) -> Self {
+        ClockRef {
+            epoch: Arc::new(AtomicU64::new(clock.epoch)),
+            epoch_start_timestamp: Arc::new(AtomicI64::new(clock.epoch_start_timestamp)),
+            leader_schedule_epoch: Arc::new(AtomicU64::new(clock.leader_schedule_epoch)),
+            slot: Arc::new(AtomicU64::new(clock.slot)),
+            unix_timestamp: Arc::new(AtomicI64::new(clock.unix_timestamp)),
+        }
     }
 }
