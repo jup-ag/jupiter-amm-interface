@@ -111,6 +111,9 @@ pub enum Swap {
     PerpsV2Swap,
     PerpsV2AddLiquidity,
     PerpsV2RemoveLiquidity,
+    Heaven {
+        swap_direction: u8,
+    },
 }
 
 #[derive(BorshSerialize, Copy, Clone, PartialEq, Eq, Debug)]
