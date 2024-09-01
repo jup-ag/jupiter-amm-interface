@@ -113,7 +113,7 @@ pub enum Swap {
     PerpsV2RemoveLiquidity,
     MoonshotWrappedBuy,
     MoonshotWrappedSell,
-    StabbleSwap,
+    StabbleStableSwap,
     StabbleWeightedSwap,
 }
 
