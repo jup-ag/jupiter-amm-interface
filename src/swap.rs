@@ -111,6 +111,10 @@ pub enum Swap {
     PerpsV2Swap,
     PerpsV2AddLiquidity,
     PerpsV2RemoveLiquidity,
+    MoonshotWrappedBuy,
+    MoonshotWrappedSell,
+    StabbleStableSwap,
+    StabbleWeightedSwap,
 }
 
 #[derive(BorshSerialize, Copy, Clone, PartialEq, Eq, Debug)]
