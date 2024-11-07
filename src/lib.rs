@@ -5,10 +5,13 @@ use serde_json::Value;
 use solana_account_decoder::{UiAccount, UiAccountEncoding};
 use solana_sdk::clock::Clock;
 use std::collections::HashSet;
+
 use std::sync::atomic::{AtomicI64, AtomicU64};
 use std::sync::Arc;
 use std::{collections::HashMap, convert::TryFrom, str::FromStr};
+mod custom_serde;
 mod swap;
+use custom_serde::field_as_string;
 pub use swap::{Side, Swap};
 
 /// An abstraction in order to share reserve mints and necessary data
@@ -43,7 +46,6 @@ pub struct QuoteParams {
 
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Quote {
-    pub not_enough_liquidity: bool,
     pub min_in_amount: Option<u64>,
     pub min_out_amount: Option<u64>,
     pub in_amount: u64,
@@ -53,9 +55,10 @@ pub struct Quote {
     pub fee_pct: Decimal,
 }
 
-pub type QuoteMintToReferrer = HashMap<Pubkey, Pubkey>;
+pub type QuoteMintToReferrer = HashMap<Pubkey, Pubkey, ahash::RandomState>;
 
 pub struct SwapParams<'a, 'b> {
+    pub swap_mode: SwapMode,
     pub in_amount: u64,
     pub out_amount: u64,
     pub source_mint: Pubkey,
@@ -91,13 +94,23 @@ pub enum AmmUserSetup {
     SerumDexOpenOrdersSetup { market: Pubkey, program_id: Pubkey },
 }
 
-pub type AccountMap = HashMap<Pubkey, Account>;
+pub type AccountMap = HashMap<Pubkey, Account, ahash::RandomState>;
 
 pub fn try_get_account_data<'a>(account_map: &'a AccountMap, address: &Pubkey) -> Result<&'a [u8]> {
     account_map
         .get(address)
         .map(|account| account.data.as_slice())
         .with_context(|| format!("Could not find address: {address}"))
+}
+
+pub fn try_get_account_data_and_owner<'a>(
+    account_map: &'a AccountMap,
+    address: &Pubkey,
+) -> Result<(&'a [u8], &'a Pubkey)> {
+    let account = account_map
+        .get(address)
+        .with_context(|| format!("Could not find address: {address}"))?;
+    Ok((account.data.as_slice(), &account.owner))
 }
 
 pub struct AmmContext {
@@ -109,6 +122,7 @@ pub trait Amm {
     fn from_keyed_account(keyed_account: &KeyedAccount, amm_context: &AmmContext) -> Result<Self>
     where
         Self: Sized;
+
     /// A human readable label of the underlying DEX
     fn label(&self) -> String;
     fn program_id(&self) -> Pubkey;
@@ -189,6 +203,33 @@ pub struct KeyedAccount {
     pub key: Pubkey,
     pub account: Account,
     pub params: Option<Value>,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct Market {
+    #[serde(with = "field_as_string")]
+    pub pubkey: Pubkey,
+    #[serde(with = "field_as_string")]
+    pub owner: Pubkey,
+    /// Additional data an Amm requires, Amm dependent and decoded in the Amm implementation
+    pub params: Option<Value>,
+}
+
+impl From<KeyedAccount> for Market {
+    fn from(
+        KeyedAccount {
+            key,
+            account,
+            params,
+        }: KeyedAccount,
+    ) -> Self {
+        Market {
+            pubkey: key,
+            owner: account.owner,
+            params,
+        }
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
@@ -277,5 +318,33 @@ impl From<Clock> for ClockRef {
             slot: Arc::new(AtomicU64::new(clock.slot)),
             unix_timestamp: Arc::new(AtomicI64::new(clock.unix_timestamp)),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use solana_sdk::pubkey;
+
+    #[test]
+    fn test_market_deserialization() {
+        let json = r#"
+        {
+            "lamports": 1000,
+            "owner": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "pubkey": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+            "executable": false,
+            "rentEpoch": 0
+        }
+        "#;
+        let market: Market = serde_json::from_str(json).unwrap();
+        assert_eq!(
+            market.owner,
+            pubkey!("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")
+        );
+        assert_eq!(
+            market.pubkey,
+            pubkey!("DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263")
+        );
     }
 }
