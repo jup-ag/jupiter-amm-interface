@@ -115,6 +115,16 @@ pub enum Swap {
     MoonshotWrappedSell,
     StabbleStableSwap,
     StabbleWeightedSwap,
+    Obric {
+        x_to_y: bool,
+    },
+    FoxBuyFromEstimatedCost,
+    FoxClaimPartial {
+        is_y: bool,
+    },
+    SolFi {
+        is_quote_to_base: bool,
+    },
 }
 
 #[derive(BorshSerialize, Copy, Clone, PartialEq, Eq, Debug)]
