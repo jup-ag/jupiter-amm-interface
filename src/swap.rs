@@ -125,6 +125,14 @@ pub enum Swap {
     SolFi {
         is_quote_to_base: bool,
     },
+    SolayerDelegateNoInit,
+    SolayerUndelegateNoInit,
+    TokenMill {
+        side: Side,
+    },
+    DaoFunBuy,
+    DaoFunSell,
+    ZeroFi,
 }
 
 #[derive(BorshSerialize, Copy, Clone, PartialEq, Eq, Debug)]
