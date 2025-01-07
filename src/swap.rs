@@ -1,12 +1,12 @@
-use borsh::BorshSerialize;
+use borsh::{BorshDeserialize, BorshSerialize};
 
-#[derive(BorshSerialize, Copy, Clone, Debug, PartialEq)]
+#[derive(BorshSerialize, BorshDeserialize, Copy, Clone, Debug, PartialEq)]
 pub enum Side {
     Bid,
     Ask,
 }
 
-#[derive(BorshSerialize, Clone, Debug, PartialEq)]
+#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, PartialEq)]
 pub enum Swap {
     Saber,
     SaberAddDecimalsDeposit,
@@ -127,7 +127,7 @@ pub enum Swap {
     },
 }
 
-#[derive(BorshSerialize, Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(BorshSerialize, BorshDeserialize, Copy, Clone, PartialEq, Eq, Debug)]
 pub enum AccountsType {
     TransferHookA,
     TransferHookB,
@@ -140,13 +140,13 @@ pub enum AccountsType {
     //TickArrayTwo,
 }
 
-#[derive(BorshSerialize, Clone, Debug, PartialEq)]
+#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, PartialEq)]
 pub struct RemainingAccountsSlice {
     pub accounts_type: AccountsType,
     pub length: u8,
 }
 
-#[derive(BorshSerialize, Clone, Debug, PartialEq)]
+#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, PartialEq)]
 pub struct RemainingAccountsInfo {
     pub slices: Vec<RemainingAccountsSlice>,
 }
