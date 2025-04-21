@@ -125,6 +125,8 @@ pub enum Swap {
     SolFi {
         is_quote_to_base: bool,
     },
+    BoopFunBuyToken,
+    BoopFunSellToken,
 }
 
 #[derive(BorshSerialize, Copy, Clone, PartialEq, Eq, Debug)]
