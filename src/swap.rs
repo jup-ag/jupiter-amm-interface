@@ -6,7 +6,7 @@ pub enum Side {
     Ask,
 }
 
-#[derive(BorshSerialize, Clone, Debug, PartialEq)]
+#[derive(BorshSerialize, Clone, PartialEq, Debug)]
 pub enum Swap {
     Saber,
     SaberAddDecimalsDeposit,
@@ -125,9 +125,18 @@ pub enum Swap {
     SolFi {
         is_quote_to_base: bool,
     },
+    SolayerDelegateNoInit,
+    SolayerUndelegateNoInit,
+    TokenMill {
+        side: Side,
+    },
+    DaosFunBuy,
+    DaosFunSell,
+    ZeroFi,
+    StakeDexWithdrawWrappedSol,
 }
 
-#[derive(BorshSerialize, Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(BorshSerialize, Clone, PartialEq, Eq, Debug)]
 pub enum AccountsType {
     TransferHookA,
     TransferHookB,

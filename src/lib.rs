@@ -2,7 +2,7 @@ use anyhow::{anyhow, Context, Error, Result};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use solana_account_decoder::{UiAccount, UiAccountEncoding};
+use solana_account_decoder::{encode_ui_account, UiAccount, UiAccountEncoding};
 use solana_sdk::clock::Clock;
 use std::collections::HashSet;
 
@@ -75,7 +75,7 @@ pub struct SwapParams<'a, 'b> {
     pub missing_dynamic_accounts_as_default: bool,
 }
 
-impl<'a, 'b> SwapParams<'a, 'b> {
+impl SwapParams<'_, '_> {
     /// A placeholder to indicate an optional account or used as a terminator when consuming remaining accounts
     /// Using the jupiter program id
     pub fn placeholder_account_meta(&self) -> AccountMeta {
@@ -118,11 +118,9 @@ pub struct AmmContext {
 }
 
 pub trait Amm {
-    // Maybe trait was made too restrictive?
     fn from_keyed_account(keyed_account: &KeyedAccount, amm_context: &AmmContext) -> Result<Self>
     where
         Self: Sized;
-
     /// A human readable label of the underlying DEX
     fn label(&self) -> String;
     fn program_id(&self) -> Pubkey;
@@ -198,6 +196,31 @@ impl Clone for Box<dyn Amm + Send + Sync> {
     }
 }
 
+pub type AmmLabel = &'static str;
+
+pub trait AmmProgramIdToLabel {
+    const PROGRAM_ID_TO_LABELS: &[(Pubkey, AmmLabel)];
+}
+
+pub trait SingleProgramAmm {
+    const PROGRAM_ID: Pubkey;
+    const LABEL: AmmLabel;
+}
+
+impl<T: SingleProgramAmm> AmmProgramIdToLabel for T {
+    const PROGRAM_ID_TO_LABELS: &[(Pubkey, AmmLabel)] = &[(Self::PROGRAM_ID, Self::LABEL)];
+}
+
+#[macro_export]
+macro_rules! single_program_amm {
+    ($amm_struct:ty, $program_id:expr, $label:expr) => {
+        impl SingleProgramAmm for $amm_struct {
+            const PROGRAM_ID: Pubkey = $program_id;
+            const LABEL: &'static str = $label;
+        }
+    };
+}
+
 #[derive(Clone, Deserialize, Serialize)]
 pub struct KeyedAccount {
     pub key: Pubkey,
@@ -248,7 +271,8 @@ impl From<KeyedAccount> for KeyedUiAccount {
             account,
             params,
         } = keyed_account;
-        let ui_account = UiAccount::encode(&key, &account, UiAccountEncoding::Base64, None, None);
+
+        let ui_account = encode_ui_account(&key, &account, UiAccountEncoding::Base64, None, None);
 
         KeyedUiAccount {
             pubkey: key.to_string(),
