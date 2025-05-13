@@ -108,7 +108,7 @@ pub enum Swap {
     OneIntro,
     PumpdotfunWrappedBuy,
     PumpdotfunWrappedSell,
-    PerpsV2Swap,
+    PerpsV2,
     PerpsV2AddLiquidity,
     PerpsV2RemoveLiquidity,
     MoonshotWrappedBuy,
@@ -134,6 +134,31 @@ pub enum Swap {
     DaosFunSell,
     ZeroFi,
     StakeDexWithdrawWrappedSol,
+    VirtualsBuy,    
+    VirtualsSell,
+    Perena {
+        in_index: u8,
+        out_index: u8,
+    },
+    PumpdotfunAmmBuy,
+    PumpdotfunAmmSell,
+    Gamma,
+    MeteoraDlmmSwapV2 {
+        remaining_accounts_info: RemainingAccountsInfo,
+    },
+    Woofi,
+    MeteoraDammV2,
+    MeteoraDynamicBondingCurveSwap,
+    StabbleStableSwapV2,
+    StabbleWeightedSwapV2,
+    RaydiumLaunchlabBuy {
+        share_fee_rate: u64,
+    },
+    RaydiumLaunchlabSell {
+        share_fee_rate: u64,
+    },
+    BoopdotfunWrappedBuy,
+    BoopdotfunWrappedSell,
 }
 
 #[derive(BorshSerialize, Clone, PartialEq, Eq, Debug)]

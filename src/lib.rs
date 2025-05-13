@@ -94,7 +94,7 @@ pub enum AmmUserSetup {
     SerumDexOpenOrdersSetup { market: Pubkey, program_id: Pubkey },
 }
 
-pub type AccountMap = HashMap<Pubkey, Account, ahash::RandomState>;
+pub type AccountMap = HashMap<Pubkey, Arc<Account>, ahash::RandomState>;
 
 pub fn try_get_account_data<'a>(account_map: &'a AccountMap, address: &Pubkey) -> Result<&'a [u8]> {
     account_map
