@@ -16,6 +16,7 @@ pub use swap::{Side, Swap};
 
 /// An abstraction in order to share reserve mints and necessary data
 use solana_sdk::{account::Account, instruction::AccountMeta, pubkey::Pubkey};
+use spl_token_2022;
 
 #[derive(Serialize, Deserialize, PartialEq, Clone, Copy, Default, Debug)]
 pub enum SwapMode {
@@ -187,6 +188,10 @@ pub trait Amm {
     /// If the market is active at all
     fn is_active(&self) -> bool {
         true
+    }
+
+    fn update_transfer_fee(&mut self, mint: &Pubkey, fee_config: Option<spl_token_2022::extension::transfer_fee::TransferFee>) -> Result<()> {
+        Ok(())
     }
 }
 
