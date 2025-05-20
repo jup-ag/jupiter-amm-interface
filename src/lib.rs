@@ -193,6 +193,10 @@ pub trait Amm {
     fn update_transfer_fee(&mut self, mint: &Pubkey, fee_config: Option<spl_token_2022::extension::transfer_fee::TransferFee>) -> Result<()> {
         Ok(())
     }
+
+    fn update_token_program_id(&mut self, _mint_pk: &Pubkey, _owner_program_id: Pubkey) -> Result<()> {
+        Ok(())
+    }
 }
 
 impl Clone for Box<dyn Amm + Send + Sync> {
