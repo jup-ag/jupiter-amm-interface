@@ -125,8 +125,9 @@ pub enum Swap {
     SolFi {
         is_quote_to_base: bool,
     },
-    HeavenBuy,
-    HeavenSell
+    Heaven {
+        a_to_b: bool
+    }
 }
 
 #[derive(BorshSerialize, Copy, Clone, PartialEq, Eq, Debug)]
