@@ -138,6 +138,14 @@ pub trait Amm {
 
     fn quote(&self, quote_params: &QuoteParams) -> Result<Quote>;
 
+    fn quote_with_current_token_balance(
+        &self,
+        quote_params: &QuoteParams,
+        current_token_balance: u64,
+    ) -> Result<Quote> {
+        todo!()
+    }
+
     /// Indicates which Swap has to be performed along with all the necessary account metas
     fn get_swap_and_account_metas(&self, swap_params: &SwapParams) -> Result<SwapAndAccountMetas>;
 
