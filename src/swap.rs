@@ -1,32 +1,21 @@
-use borsh::BorshSerialize;
-
-#[derive(BorshSerialize, Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Side {
     Bid,
     Ask,
 }
 
-#[derive(BorshSerialize, Clone, Debug, PartialEq)]
+/// This enum is a jupiter backend enum and does not map 1:1 to the onchain aggregator Swap enum
+#[derive(Clone, PartialEq, Debug)]
 pub enum Swap {
     Saber,
     SaberAddDecimalsDeposit,
     SaberAddDecimalsWithdraw,
     TokenSwap,
-    Sencha,
-    Step,
-    Cropper,
     Raydium,
     Crema {
         a_to_b: bool,
     },
-    Lifinity,
     Mercurial,
-    Cykura,
-    Serum {
-        side: Side,
-    },
-    MarinadeDeposit,
-    MarinadeUnstake,
     Aldrin {
         side: Side,
     },
@@ -40,39 +29,17 @@ pub enum Swap {
         x_to_y: bool,
     },
     Meteora,
-    GooseFX,
-    DeltaFi {
-        stable: bool,
-    },
-    Balansol,
     MarcoPolo {
         x_to_y: bool,
     },
-    Dradex {
-        side: Side,
-    },
     LifinityV2,
     RaydiumClmm,
-    Openbook {
-        side: Side,
-    },
     Phoenix {
         side: Side,
-    },
-    Symmetry {
-        from_token_id: u64,
-        to_token_id: u64,
     },
     TokenSwapV2,
     HeliumTreasuryManagementRedeemV0,
     StakeDexStakeWrappedSol,
-    StakeDexSwapViaStake {
-        bridge_stake_seed: u32,
-    },
-    GooseFXV2,
-    Perps,
-    PerpsAddLiquidity,
-    PerpsRemoveLiquidity,
     MeteoraDlmm,
     OpenBookV2 {
         side: Side,
@@ -80,11 +47,6 @@ pub enum Swap {
     RaydiumClmmV2,
     StakeDexPrefundWithdrawStakeAndDepositStake {
         bridge_stake_seed: u32,
-    },
-    Clone {
-        pool_index: u8,
-        quantity_is_input: bool,
-        quantity_is_collateral: bool,
     },
     SanctumS {
         src_lst_value_calc_accs: u8,
@@ -106,9 +68,9 @@ pub enum Swap {
         remaining_accounts_info: Option<RemainingAccountsInfo>,
     },
     OneIntro,
-    PumpdotfunWrappedBuy,
-    PumpdotfunWrappedSell,
-    PerpsV2Swap,
+    PumpWrappedBuy,
+    PumpWrappedSell,
+    PerpsV2,
     PerpsV2AddLiquidity,
     PerpsV2RemoveLiquidity,
     MoonshotWrappedBuy,
@@ -118,16 +80,54 @@ pub enum Swap {
     Obric {
         x_to_y: bool,
     },
-    FoxBuyFromEstimatedCost,
-    FoxClaimPartial {
-        is_y: bool,
-    },
     SolFi {
         is_quote_to_base: bool,
     },
+    SolayerDelegateNoInit,
+    SolayerUndelegateNoInit,
+    ZeroFi,
+    StakeDexWithdrawWrappedSol,
+    VirtualsBuy,
+    VirtualsSell,
+    Perena {
+        in_index: u8,
+        out_index: u8,
+    },
+    PumpSwapBuy,
+    PumpSwapSell,
+    Gamma,
+    MeteoraDlmmSwapV2 {
+        remaining_accounts_info: RemainingAccountsInfo,
+    },
+    Woofi,
+    MeteoraDammV2,
+    StabbleStableSwapV2,
+    StabbleWeightedSwapV2,
+    RaydiumLaunchlabBuy {
+        share_fee_rate: u64,
+    },
+    RaydiumLaunchlabSell {
+        share_fee_rate: u64,
+    },
+    BoopdotfunWrappedBuy,
+    BoopdotfunWrappedSell,
+    Plasma {
+        side: Side,
+    },
+    GoonFi {
+        is_bid: bool,
+        blacklist_bump: u8,
+    },
+    HumidiFi {
+        swap_id: u64,
+        is_base_to_quote: bool,
+    },
+    MeteoraDynamicBondingCurveSwapWithRemainingAccounts,
+    TesseraV {
+        side: Side,
+    },
 }
-
-#[derive(BorshSerialize, Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum AccountsType {
     TransferHookA,
     TransferHookB,
@@ -140,13 +140,13 @@ pub enum AccountsType {
     //TickArrayTwo,
 }
 
-#[derive(BorshSerialize, Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct RemainingAccountsSlice {
     pub accounts_type: AccountsType,
     pub length: u8,
 }
 
-#[derive(BorshSerialize, Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct RemainingAccountsInfo {
     pub slices: Vec<RemainingAccountsSlice>,
 }
