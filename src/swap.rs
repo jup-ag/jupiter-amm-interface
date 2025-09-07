@@ -1,12 +1,12 @@
-use borsh::BorshSerialize;
+use borsh::{BorshDeserialize, BorshSerialize};
 
-#[derive(BorshSerialize, Copy, Clone, Debug, PartialEq)]
+#[derive(BorshSerialize, BorshDeserialize, Copy, Clone, Debug, PartialEq)]
 pub enum Side {
     Bid,
     Ask,
 }
 
-#[derive(BorshSerialize, Clone, PartialEq, Debug)]
+#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, PartialEq)]
 pub enum Swap {
     Saber,
     SaberAddDecimalsDeposit,
@@ -108,7 +108,7 @@ pub enum Swap {
     OneIntro,
     PumpdotfunWrappedBuy,
     PumpdotfunWrappedSell,
-    PerpsV2,
+    PerpsV2Swap,
     PerpsV2AddLiquidity,
     PerpsV2RemoveLiquidity,
     MoonshotWrappedBuy,
@@ -140,8 +140,8 @@ pub enum Swap {
         in_index: u8,
         out_index: u8,
     },
-    PumpdotfunAmmBuy,
-    PumpdotfunAmmSell,
+    PumpSwapBuy,
+    PumpSwapSell,
     Gamma,
     MeteoraDlmmSwapV2 {
         remaining_accounts_info: RemainingAccountsInfo,
@@ -159,9 +159,39 @@ pub enum Swap {
     },
     BoopdotfunWrappedBuy,
     BoopdotfunWrappedSell,
+    Plasma {
+        side: Side,
+    },
+    GoonFi {
+        is_bid: bool,
+        blacklist_bump: u8,
+    },
+    HumidiFi {
+        swap_id: u64,
+        is_base_to_quote: bool,
+    },
+    MeteoraDynamicBondingCurveSwapWithRemainingAccounts,
+    TesseraV {
+        side: Side,
+    },
+    PumpWrappedBuyV2,
+    PumpWrappedSellV2,
+    PumpSwapBuyV2,
+    PumpSwapSellV2,
+    Heaven {
+        a_to_b: bool,
+    },
+    SolFiV2 {
+        is_quote_to_base: bool,
+    },
+    Aquifer,
+    PumpWrappedBuyV3,
+    PumpWrappedSellV3,
+    PumpSwapBuyV3,
+    PumpSwapSellV3,
 }
 
-#[derive(BorshSerialize, Clone, PartialEq, Eq, Debug)]
+#[derive(BorshSerialize, BorshDeserialize, Copy, Clone, PartialEq, Eq, Debug)]
 pub enum AccountsType {
     TransferHookA,
     TransferHookB,
@@ -174,13 +204,13 @@ pub enum AccountsType {
     //TickArrayTwo,
 }
 
-#[derive(BorshSerialize, Clone, Debug, PartialEq)]
+#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, PartialEq)]
 pub struct RemainingAccountsSlice {
     pub accounts_type: AccountsType,
     pub length: u8,
 }
 
-#[derive(BorshSerialize, Clone, Debug, PartialEq)]
+#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, PartialEq)]
 pub struct RemainingAccountsInfo {
     pub slices: Vec<RemainingAccountsSlice>,
 }
