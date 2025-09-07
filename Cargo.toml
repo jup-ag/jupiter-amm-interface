@@ -51,10 +51,10 @@ version = "1.0.197"
 version = "1.0.114"
 
 [dependencies.solana-account-decoder]
-version = ">=2.1"
+version = "2.1.0"
 
 [dependencies.solana-sdk]
-version = ">=2.1"
+version = "2.1.0"
 
 [dependencies.spl-token-2022]
 version = "=7.0.0"
