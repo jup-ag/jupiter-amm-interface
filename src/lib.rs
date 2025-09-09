@@ -12,7 +12,7 @@ use std::{collections::HashMap, convert::TryFrom, str::FromStr};
 mod custom_serde;
 mod swap;
 use custom_serde::field_as_string;
-pub use swap::{Side, Swap};
+pub use swap::{Side, Swap, RemainingAccountsInfo};
 pub use borsh::BorshSerialize;
 
 /// An abstraction in order to share reserve mints and necessary data
