@@ -140,7 +140,7 @@ pub struct AmmContext {
 }
 
 pub trait Amm {
-    fn from_keyed_account(keyed_account: &KeyedAccount, amm_context: &AmmContext) -> Result<Self>
+    async fn from_keyed_account(keyed_account: &KeyedAccount, amm_context: &AmmContext) -> Result<Self>
     where
         Self: Sized;
     /// A human readable label of the underlying DEX
