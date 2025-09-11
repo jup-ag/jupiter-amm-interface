@@ -126,7 +126,20 @@ pub enum Swap {
     TesseraV {
         side: Side,
     },
+    Hylo {
+        in_token: HyloToken,
+        out_token: HyloToken
+    },
 }
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum HyloToken {
+    HYUSD,
+    XSOL,
+    SHYUSD,
+    JITOSOL,
+}
+
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum AccountsType {
     TransferHookA,
