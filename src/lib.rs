@@ -19,6 +19,26 @@ pub use borsh::BorshSerialize;
 use solana_sdk::{account::Account, instruction::AccountMeta, pubkey::Pubkey};
 use spl_token_2022;
 
+/// Mint 属性更新事件
+#[derive(Debug, Clone)]
+pub enum MintUpdate {
+    /// Transfer fee 配置变更
+    TransferFee {
+        mint: Pubkey,
+        fee_config: Option<spl_token_2022::extension::transfer_fee::TransferFee>,
+    },
+    /// Token program ID 变更
+    ProgramId {
+        mint: Pubkey,
+        program_id: Pubkey,
+    },
+    /// Token supply 变更
+    Supply {
+        mint: Pubkey,
+        new_supply: u64,
+    },
+}
+
 #[derive(Serialize, Deserialize, PartialEq, Clone, Copy, Default, Debug)]
 pub enum SwapMode {
     #[default]
@@ -191,11 +211,7 @@ pub trait Amm {
         true
     }
 
-    fn update_transfer_fee(&mut self, mint: &Pubkey, fee_config: Option<spl_token_2022::extension::transfer_fee::TransferFee>) -> Result<()> {
-        Ok(())
-    }
-
-    fn update_token_program_id(&mut self, _mint_pk: &Pubkey, _owner_program_id: Pubkey) -> Result<()> {
+    fn on_mint_update(&mut self, _update: &MintUpdate) -> Result<()> {
         Ok(())
     }
 }
