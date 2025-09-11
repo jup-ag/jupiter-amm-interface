@@ -1,3 +1,5 @@
+use solana_sdk::pubkey::Pubkey;
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Side {
     Bid,
@@ -127,17 +129,9 @@ pub enum Swap {
         side: Side,
     },
     Hylo {
-        in_token: HyloToken,
-        out_token: HyloToken
+        in_token: Pubkey,
+        out_token: Pubkey
     },
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum HyloToken {
-    HYUSD,
-    XSOL,
-    SHYUSD,
-    JITOSOL,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
