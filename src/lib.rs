@@ -161,6 +161,13 @@ pub trait Amm {
     /// Indicates which Swap has to be performed along with all the necessary account metas
     fn get_swap_and_account_metas(&self, swap_params: &SwapParams) -> Result<SwapAndAccountMetas>;
 
+    /// Returns the current reserves for the AMM pool
+    /// Returns (reserve_a, reserve_b) matching the order of get_reserve_mints()
+    /// Used for liquidity-based pruning in arbitrage discovery
+    fn get_reserves(&self) -> Option<(u64, u64)> {
+        None  // Default implementation returns None for backward compatibility
+    }
+
     /// Indicates if get_accounts_to_update might return a non constant vec
     fn has_dynamic_accounts(&self) -> bool {
         false
