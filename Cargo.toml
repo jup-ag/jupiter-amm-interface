@@ -8,7 +8,6 @@ keywords = ["solana", "jupiter", "aggregator"]
 
 [dependencies]
 solana-sdk = "2.3.1"
-solana-account-decoder = "2"
 anyhow = "1"
 serde_json = "1.0.114"
 serde = "1.0.219"
