@@ -2,7 +2,7 @@ use anyhow::{anyhow, Context, Error, Result};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use solana_sdk::clock::Clock;
+use solana_clock::Clock;
 use std::collections::HashSet;
 
 use std::sync::atomic::{AtomicI64, AtomicU64};
@@ -14,7 +14,9 @@ use custom_serde::field_as_string;
 pub use swap::{AccountsType, RemainingAccountsInfo, RemainingAccountsSlice, Side, Swap};
 
 /// An abstraction in order to share reserve mints and necessary data
-use solana_sdk::{account::Account, instruction::AccountMeta, pubkey::Pubkey};
+use solana_account::Account;
+use solana_instruction::AccountMeta;
+use solana_pubkey::Pubkey;
 
 #[derive(Serialize, Deserialize, PartialEq, Clone, Copy, Default, Debug)]
 pub enum SwapMode {
@@ -286,7 +288,7 @@ impl From<Clock> for ClockRef {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use solana_sdk::pubkey;
+    use solana_pubkey::pubkey;
 
     #[test]
     fn test_market_deserialization() {
