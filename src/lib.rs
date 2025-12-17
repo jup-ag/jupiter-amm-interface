@@ -2,13 +2,12 @@ use anyhow::{anyhow, Context, Error, Result};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use solana_account_decoder::{encode_ui_account, UiAccount, UiAccountEncoding};
 use solana_sdk::clock::Clock;
 use std::collections::HashSet;
 
 use std::sync::atomic::{AtomicI64, AtomicU64};
 use std::sync::Arc;
-use std::{collections::HashMap, convert::TryFrom, str::FromStr};
+use std::{collections::HashMap, str::FromStr};
 mod custom_serde;
 mod swap;
 use custom_serde::field_as_string;
@@ -239,54 +238,6 @@ impl From<KeyedAccount> for Market {
             owner: account.owner,
             params,
         }
-    }
-}
-
-#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
-pub struct KeyedUiAccount {
-    pub pubkey: String,
-    #[serde(flatten)]
-    pub ui_account: UiAccount,
-    /// Additional data an Amm requires, Amm dependent and decoded in the Amm implementation
-    pub params: Option<Value>,
-}
-
-impl From<KeyedAccount> for KeyedUiAccount {
-    fn from(keyed_account: KeyedAccount) -> Self {
-        let KeyedAccount {
-            key,
-            account,
-            params,
-        } = keyed_account;
-
-        let ui_account = encode_ui_account(&key, &account, UiAccountEncoding::Base64, None, None);
-
-        KeyedUiAccount {
-            pubkey: key.to_string(),
-            ui_account,
-            params,
-        }
-    }
-}
-
-impl TryFrom<KeyedUiAccount> for KeyedAccount {
-    type Error = Error;
-
-    fn try_from(keyed_ui_account: KeyedUiAccount) -> Result<Self, Self::Error> {
-        let KeyedUiAccount {
-            pubkey,
-            ui_account,
-            params,
-        } = keyed_ui_account;
-        let account = ui_account
-            .decode()
-            .unwrap_or_else(|| panic!("Failed to decode ui_account for {pubkey}"));
-
-        Ok(KeyedAccount {
-            key: Pubkey::from_str(&pubkey)?,
-            account,
-            params,
-        })
     }
 }
 
