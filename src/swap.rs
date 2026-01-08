@@ -1,32 +1,22 @@
-use borsh::BorshSerialize;
+use anyhow::anyhow;
 
-#[derive(BorshSerialize, Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Side {
     Bid,
     Ask,
 }
 
-#[derive(BorshSerialize, Clone, Debug, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum Swap {
     Saber,
     SaberAddDecimalsDeposit,
     SaberAddDecimalsWithdraw,
     TokenSwap,
-    Sencha,
-    Step,
-    Cropper,
     Raydium,
     Crema {
         a_to_b: bool,
     },
-    Lifinity,
     Mercurial,
-    Cykura,
-    Serum {
-        side: Side,
-    },
-    MarinadeDeposit,
-    MarinadeUnstake,
     Aldrin {
         side: Side,
     },
@@ -40,39 +30,17 @@ pub enum Swap {
         x_to_y: bool,
     },
     Meteora,
-    GooseFX,
-    DeltaFi {
-        stable: bool,
-    },
-    Balansol,
     MarcoPolo {
         x_to_y: bool,
     },
-    Dradex {
-        side: Side,
-    },
     LifinityV2,
     RaydiumClmm,
-    Openbook {
-        side: Side,
-    },
     Phoenix {
         side: Side,
-    },
-    Symmetry {
-        from_token_id: u64,
-        to_token_id: u64,
     },
     TokenSwapV2,
     HeliumTreasuryManagementRedeemV0,
     StakeDexStakeWrappedSol,
-    StakeDexSwapViaStake {
-        bridge_stake_seed: u32,
-    },
-    GooseFXV2,
-    Perps,
-    PerpsAddLiquidity,
-    PerpsRemoveLiquidity,
     MeteoraDlmm,
     OpenBookV2 {
         side: Side,
@@ -80,11 +48,6 @@ pub enum Swap {
     RaydiumClmmV2,
     StakeDexPrefundWithdrawStakeAndDepositStake {
         bridge_stake_seed: u32,
-    },
-    Clone {
-        pool_index: u8,
-        quantity_is_input: bool,
-        quantity_is_collateral: bool,
     },
     SanctumS {
         src_lst_value_calc_accs: u8,
@@ -106,9 +69,7 @@ pub enum Swap {
         remaining_accounts_info: Option<RemainingAccountsInfo>,
     },
     OneIntro,
-    PumpdotfunWrappedBuy,
-    PumpdotfunWrappedSell,
-    PerpsV2Swap,
+    PerpsV2,
     PerpsV2AddLiquidity,
     PerpsV2RemoveLiquidity,
     MoonshotWrappedBuy,
@@ -118,16 +79,108 @@ pub enum Swap {
     Obric {
         x_to_y: bool,
     },
-    FoxBuyFromEstimatedCost,
-    FoxClaimPartial {
-        is_y: bool,
-    },
     SolFi {
         is_quote_to_base: bool,
     },
+    SolayerDelegateNoInit,
+    SolayerUndelegateNoInit,
+    ZeroFi,
+    StakeDexWithdrawWrappedSol,
+    VirtualsBuy,
+    VirtualsSell,
+    Perena {
+        in_index: u8,
+        out_index: u8,
+    },
+    Gamma,
+    MeteoraDlmmSwapV2 {
+        remaining_accounts_info: RemainingAccountsInfo,
+    },
+    Woofi,
+    MeteoraDammV2,
+    StabbleStableSwapV2,
+    StabbleWeightedSwapV2,
+    RaydiumLaunchlabBuy {
+        share_fee_rate: u64,
+    },
+    RaydiumLaunchlabSell {
+        share_fee_rate: u64,
+    },
+    BoopdotfunWrappedBuy,
+    BoopdotfunWrappedSell,
+    Plasma {
+        side: Side,
+    },
+    GoonFi {
+        is_bid: bool,
+        blacklist_bump: u8,
+    },
+    HumidiFi {
+        swap_id: u64,
+        is_base_to_quote: bool,
+    },
+    MeteoraDynamicBondingCurveSwapWithRemainingAccounts,
+    TesseraV {
+        side: Side,
+    },
+    Heaven {
+        a_to_b: bool,
+    },
+    SolFiV2 {
+        is_quote_to_base: bool,
+    },
+    Aquifer,
+    PumpWrappedBuyV3,
+    PumpWrappedSellV3,
+    PumpSwapBuyV3,
+    PumpSwapSellV3,
+    JupiterLendDeposit,
+    JupiterLendRedeem,
+    DefiTuna {
+        a_to_b: bool,
+        remaining_accounts_info: Option<RemainingAccountsInfo>,
+    },
+    AlphaQ {
+        a_to_b: bool,
+    },
+    RaydiumV2,
+    SarosDlmm {
+        swap_for_y: bool,
+    },
+    Futarchy {
+        side: Side,
+    },
+    MeteoraDammV2WithRemainingAccounts,
+    Obsidian,
+    WhaleStreet {
+        side: Side,
+    },
+    DynamicV1 {
+        candidate_swaps: Vec<CandidateSwap>,
+    },
+    PumpWrappedBuyV4,
+    PumpWrappedSellV4,
+    CarrotIssue,
+    CarrotRedeem,
+    Manifest {
+        side: Side,
+    },
+    BisonFi {
+        a_to_b: bool,
+    },
+    HumidiFiV2 {
+        swap_id: u64,
+        is_base_to_quote: bool,
+    },
+    PerenaStar {
+        is_mint: bool,
+    },
+    GoonFiV2 {
+        is_bid: bool,
+    },
 }
 
-#[derive(BorshSerialize, Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum AccountsType {
     TransferHookA,
     TransferHookB,
@@ -135,18 +188,59 @@ pub enum AccountsType {
     // TransferHookInput,
     // TransferHookIntermediate,
     // TransferHookOutput,
-    //TickArray,
-    //TickArrayOne,
-    //TickArrayTwo,
+    TickArray,
+    // TickArrayOne,
+    // TickArrayTwo,
 }
 
-#[derive(BorshSerialize, Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct RemainingAccountsSlice {
     pub accounts_type: AccountsType,
     pub length: u8,
 }
 
-#[derive(BorshSerialize, Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct RemainingAccountsInfo {
     pub slices: Vec<RemainingAccountsSlice>,
+}
+
+#[derive(Clone, PartialEq, Debug)]
+pub enum CandidateSwap {
+    HumidiFi {
+        swap_id: u64,
+        is_base_to_quote: bool,
+    },
+    TesseraV {
+        side: Side,
+    },
+    HumidiFiV2 {
+        swap_id: u64,
+        is_base_to_quote: bool,
+    },
+}
+
+impl TryInto<CandidateSwap> for Swap {
+    type Error = anyhow::Error;
+
+    fn try_into(self) -> Result<CandidateSwap, Self::Error> {
+        let candidate_swap = match self {
+            Swap::HumidiFi {
+                swap_id,
+                is_base_to_quote,
+            } => CandidateSwap::HumidiFi {
+                swap_id,
+                is_base_to_quote,
+            },
+            Swap::TesseraV { side } => CandidateSwap::TesseraV { side },
+            Swap::HumidiFiV2 {
+                swap_id,
+                is_base_to_quote,
+            } => CandidateSwap::HumidiFiV2 {
+                swap_id,
+                is_base_to_quote,
+            },
+            _ => return Err(anyhow!("Swap {self:?} is not a valid candidate swap")),
+        };
+        Ok(candidate_swap)
+    }
 }
