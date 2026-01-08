@@ -1,10 +1,11 @@
+use anyhow::anyhow;
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Side {
     Bid,
     Ask,
 }
 
-/// This enum is a jupiter backend enum and does not map 1:1 to the onchain aggregator Swap enum
 #[derive(Clone, PartialEq, Debug)]
 pub enum Swap {
     Saber,
@@ -68,8 +69,6 @@ pub enum Swap {
         remaining_accounts_info: Option<RemainingAccountsInfo>,
     },
     OneIntro,
-    PumpWrappedBuy,
-    PumpWrappedSell,
     PerpsV2,
     PerpsV2AddLiquidity,
     PerpsV2RemoveLiquidity,
@@ -93,8 +92,6 @@ pub enum Swap {
         in_index: u8,
         out_index: u8,
     },
-    PumpSwapBuy,
-    PumpSwapSell,
     Gamma,
     MeteoraDlmmSwapV2 {
         remaining_accounts_info: RemainingAccountsInfo,
@@ -126,7 +123,63 @@ pub enum Swap {
     TesseraV {
         side: Side,
     },
+    Heaven {
+        a_to_b: bool,
+    },
+    SolFiV2 {
+        is_quote_to_base: bool,
+    },
+    Aquifer,
+    PumpWrappedBuyV3,
+    PumpWrappedSellV3,
+    PumpSwapBuyV3,
+    PumpSwapSellV3,
+    JupiterLendDeposit,
+    JupiterLendRedeem,
+    DefiTuna {
+        a_to_b: bool,
+        remaining_accounts_info: Option<RemainingAccountsInfo>,
+    },
+    AlphaQ {
+        a_to_b: bool,
+    },
+    RaydiumV2,
+    SarosDlmm {
+        swap_for_y: bool,
+    },
+    Futarchy {
+        side: Side,
+    },
+    MeteoraDammV2WithRemainingAccounts,
+    Obsidian,
+    WhaleStreet {
+        side: Side,
+    },
+    DynamicV1 {
+        candidate_swaps: Vec<CandidateSwap>,
+    },
+    PumpWrappedBuyV4,
+    PumpWrappedSellV4,
+    CarrotIssue,
+    CarrotRedeem,
+    Manifest {
+        side: Side,
+    },
+    BisonFi {
+        a_to_b: bool,
+    },
+    HumidiFiV2 {
+        swap_id: u64,
+        is_base_to_quote: bool,
+    },
+    PerenaStar {
+        is_mint: bool,
+    },
+    GoonFiV2 {
+        is_bid: bool,
+    },
 }
+
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum AccountsType {
     TransferHookA,
@@ -135,9 +188,9 @@ pub enum AccountsType {
     // TransferHookInput,
     // TransferHookIntermediate,
     // TransferHookOutput,
-    //TickArray,
-    //TickArrayOne,
-    //TickArrayTwo,
+    TickArray,
+    // TickArrayOne,
+    // TickArrayTwo,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -149,4 +202,45 @@ pub struct RemainingAccountsSlice {
 #[derive(Clone, Debug, PartialEq)]
 pub struct RemainingAccountsInfo {
     pub slices: Vec<RemainingAccountsSlice>,
+}
+
+#[derive(Clone, PartialEq, Debug)]
+pub enum CandidateSwap {
+    HumidiFi {
+        swap_id: u64,
+        is_base_to_quote: bool,
+    },
+    TesseraV {
+        side: Side,
+    },
+    HumidiFiV2 {
+        swap_id: u64,
+        is_base_to_quote: bool,
+    },
+}
+
+impl TryInto<CandidateSwap> for Swap {
+    type Error = anyhow::Error;
+
+    fn try_into(self) -> Result<CandidateSwap, Self::Error> {
+        let candidate_swap = match self {
+            Swap::HumidiFi {
+                swap_id,
+                is_base_to_quote,
+            } => CandidateSwap::HumidiFi {
+                swap_id,
+                is_base_to_quote,
+            },
+            Swap::TesseraV { side } => CandidateSwap::TesseraV { side },
+            Swap::HumidiFiV2 {
+                swap_id,
+                is_base_to_quote,
+            } => CandidateSwap::HumidiFiV2 {
+                swap_id,
+                is_base_to_quote,
+            },
+            _ => return Err(anyhow!("Swap {self:?} is not a valid candidate swap")),
+        };
+        Ok(candidate_swap)
+    }
 }
