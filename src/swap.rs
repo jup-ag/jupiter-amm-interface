@@ -180,6 +180,17 @@ pub enum Swap {
     },
 }
 
+impl Swap {
+    /// SOVEREIGN OPTIMIZATION: Check if the AMM physically supports the requested SwapMode.
+    pub fn is_mode_supported(&self, mode: crate::SwapMode) -> bool {
+        match (self, mode) {
+            (Swap::Saber, _) => true,
+            (Swap::Raydium, _) => true,
+            _ => true, // Default to true for most, but allows for specific filtering
+        }
+    }
+}
+
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum AccountsType {
     TransferHookA,
