@@ -606,7 +606,7 @@ dependencies = [
 
 [[package]]
 name = "jupiter-amm-interface"
-version = "0.6.0"
+version = "0.6.1"
 dependencies = [
  "ahash 0.8.12",
  "anyhow",
@@ -617,7 +617,7 @@ dependencies = [
  "solana-account-decoder",
  "solana-clock",
  "solana-instruction",
- "solana-pubkey 4.0.0",
+ "solana-pubkey 3.0.0",
 ]
 
 [[package]]
