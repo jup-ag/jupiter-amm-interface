@@ -20,7 +20,6 @@ use {
 };
 mod custom_serde;
 mod swap;
-use custom_serde::field_as_string;
 pub use swap::{
     AccountsType, CandidateSwap, RemainingAccountsInfo, RemainingAccountsSlice, Side, Swap,
 };
@@ -239,9 +238,9 @@ pub struct KeyedAccount {
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Market {
-    #[serde(with = "field_as_string")]
+    #[serde(with = "custom_serde::field_as_string")]
     pub pubkey: Pubkey,
-    #[serde(with = "field_as_string")]
+    #[serde(with = "custom_serde::field_as_string")]
     pub owner: Pubkey,
     /// Additional data an Amm requires, Amm dependent and decoded in the Amm implementation
     pub params: Option<Value>,
