@@ -1,16 +1,18 @@
 use {
-    anyhow::{Context, Error, Result, anyhow},
     rust_decimal::Decimal,
     serde::{Deserialize, Serialize},
     serde_json::Value,
-    solana_account::Account,
+    solana_account::{Account, ReadableAccount},
     solana_account_decoder::{UiAccount, UiAccountEncoding, encode_ui_account},
     solana_clock::Clock,
     solana_instruction::AccountMeta,
+    solana_program_error::ProgramError,
     solana_pubkey::Pubkey,
     std::{
         collections::{HashMap, HashSet},
         convert::TryFrom,
+        hash::BuildHasher,
+        io,
         ops::Deref,
         str::FromStr,
         sync::{
@@ -18,6 +20,7 @@ use {
             atomic::{AtomicI64, AtomicU64, Ordering},
         },
     },
+    thiserror::Error,
 };
 mod custom_serde;
 mod swap;
@@ -33,13 +36,13 @@ pub enum SwapMode {
 }
 
 impl FromStr for SwapMode {
-    type Err = Error;
+    type Err = anyhow::Error;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         match s {
             "ExactIn" => Ok(SwapMode::ExactIn),
             "ExactOut" => Ok(SwapMode::ExactOut),
-            _ => Err(anyhow!("{} is not a valid SwapMode", s)),
+            _ => anyhow::bail!("{} is not a valid SwapMode", s),
         }
     }
 }
@@ -105,46 +108,152 @@ pub struct SwapAndAccountMetas {
     pub account_metas: Vec<AccountMeta>,
 }
 
-pub type AccountMap = HashMap<Pubkey, Account, ahash::RandomState>;
-
-pub fn try_get_account_data<'a>(account_map: &'a AccountMap, address: &Pubkey) -> Result<&'a [u8]> {
-    account_map
-        .get(address)
-        .map(|account| account.data.as_slice())
-        .with_context(|| format!("Could not find address: {address}"))
+pub trait AccountProvider {
+    fn get(&self, pubkey: &Pubkey) -> Option<impl ReadableAccount + use<'_, Self>>;
 }
 
-pub fn try_get_account_data_and_owner<'a>(
-    account_map: &'a AccountMap,
+impl<V, S: BuildHasher> AccountProvider for HashMap<Pubkey, V, S>
+where
+    V: Deref,
+    V::Target: ReadableAccount,
+{
+    fn get(&self, pubkey: &Pubkey) -> Option<impl ReadableAccount + use<'_, V, S>> {
+        HashMap::get(self, pubkey).map(Deref::deref)
+    }
+}
+
+#[derive(Debug, Error)]
+#[error("Could not find address: {0}")]
+pub struct AccountNotFoundError(Pubkey);
+
+pub fn try_get_account<'a>(
+    account_provider: &'a impl AccountProvider,
     address: &Pubkey,
-) -> Result<(&'a [u8], &'a Pubkey)> {
-    let account = account_map
+) -> Result<impl ReadableAccount + 'a, AccountNotFoundError> {
+    account_provider
         .get(address)
-        .with_context(|| format!("Could not find address: {address}"))?;
-    Ok((account.data.as_slice(), &account.owner))
+        .ok_or(AccountNotFoundError(*address))
 }
 
-pub trait Amm {
-    fn from_keyed_account(keyed_account: &KeyedAccount, amm_context: &AmmContext) -> Result<Self>
+#[derive(Debug, Error)]
+pub enum AmmFromKeyedAccountError {
+    #[error(transparent)]
+    Io(#[from] io::Error),
+    #[error(transparent)]
+    Json(#[from] serde_json::Error),
+    #[error("{0}")]
+    Custom(String),
+}
+
+impl From<&str> for AmmFromKeyedAccountError {
+    fn from(value: &str) -> Self {
+        Self::Custom(value.to_string())
+    }
+}
+
+impl From<String> for AmmFromKeyedAccountError {
+    fn from(value: String) -> Self {
+        Self::Custom(value)
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum AmmUpdateError {
+    #[error(transparent)]
+    AccountNotFound(#[from] AccountNotFoundError),
+    #[error(transparent)]
+    Io(#[from] io::Error),
+    #[error(transparent)]
+    Program(#[from] ProgramError),
+    #[error("{0}")]
+    Custom(String),
+}
+
+impl From<&str> for AmmUpdateError {
+    fn from(value: &str) -> Self {
+        Self::Custom(value.to_string())
+    }
+}
+
+impl From<String> for AmmUpdateError {
+    fn from(value: String) -> Self {
+        Self::Custom(value)
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum AmmQuoteError {
+    #[error(transparent)]
+    Io(#[from] io::Error),
+    #[error("{0}")]
+    Custom(String),
+}
+
+impl From<&str> for AmmQuoteError {
+    fn from(value: &str) -> Self {
+        Self::Custom(value.to_string())
+    }
+}
+
+impl From<String> for AmmQuoteError {
+    fn from(value: String) -> Self {
+        Self::Custom(value)
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum AmmGetSwapAndAccountMetasError {
+    #[error(transparent)]
+    Io(#[from] io::Error),
+    #[error("{0}")]
+    Custom(String),
+}
+
+impl From<&str> for AmmGetSwapAndAccountMetasError {
+    fn from(value: &str) -> Self {
+        Self::Custom(value.to_string())
+    }
+}
+
+impl From<String> for AmmGetSwapAndAccountMetasError {
+    fn from(value: String) -> Self {
+        Self::Custom(value)
+    }
+}
+
+pub trait Amm: Clone {
+    fn from_keyed_account(
+        keyed_account: &KeyedAccount,
+        amm_context: &AmmContext,
+    ) -> Result<Self, AmmFromKeyedAccountError>
     where
         Self: Sized;
+
     /// A human readable label of the underlying DEX
     fn label(&self) -> String;
+
     fn program_id(&self) -> Pubkey;
+
     /// The pool state or market state address
     fn key(&self) -> Pubkey;
+
     /// The mints that can be traded
     fn get_reserve_mints(&self) -> Vec<Pubkey>;
+
     /// The accounts necessary to produce a quote
     fn get_accounts_to_update(&self) -> Vec<Pubkey>;
+
     /// Picks necessary accounts to update it's internal state
     /// Heavy deserialization and precomputation caching should be done in this function
-    fn update(&mut self, account_map: &AccountMap) -> Result<()>;
+    fn update(&mut self, account_provider: impl AccountProvider) -> Result<(), AmmUpdateError>;
 
-    fn quote(&self, quote_params: &QuoteParams) -> Result<Quote>;
+    fn quote(&self, quote_params: &QuoteParams) -> Result<Quote, AmmQuoteError>;
 
     /// Indicates which Swap has to be performed along with all the necessary account metas
-    fn get_swap_and_account_metas(&self, swap_params: &SwapParams) -> Result<SwapAndAccountMetas>;
+    fn get_swap_and_account_metas(
+        &self,
+        swap_params: &SwapParams,
+    ) -> Result<SwapAndAccountMetas, AmmGetSwapAndAccountMetasError>;
 
     /// Indicates if get_accounts_to_update might return a non constant vec
     fn has_dynamic_accounts(&self) -> bool {
@@ -160,8 +269,6 @@ pub trait Amm {
     fn supports_exact_out(&self) -> bool {
         false
     }
-
-    fn clone_amm(&self) -> Box<dyn Amm + Send + Sync>;
 
     /// It can only trade in one direction from its first mint to second mint, assuming it is a two mint AMM
     fn unidirectional(&self) -> bool {
@@ -190,12 +297,6 @@ pub trait Amm {
     /// If the market is active at all
     fn is_active(&self) -> bool {
         true
-    }
-}
-
-impl Clone for Box<dyn Amm + Send + Sync> {
-    fn clone(&self) -> Box<dyn Amm + Send + Sync> {
-        self.clone_amm()
     }
 }
 
@@ -286,7 +387,7 @@ impl From<KeyedAccount> for KeyedUiAccount {
 }
 
 impl TryFrom<KeyedUiAccount> for KeyedAccount {
-    type Error = Error;
+    type Error = anyhow::Error;
 
     fn try_from(keyed_ui_account: KeyedUiAccount) -> Result<Self, Self::Error> {
         let KeyedUiAccount {

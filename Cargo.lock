@@ -617,7 +617,9 @@ dependencies = [
  "solana-account-decoder",
  "solana-clock",
  "solana-instruction",
+ "solana-program-error",
  "solana-pubkey 4.0.0",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
