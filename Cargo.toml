@@ -1,6 +1,6 @@
 [package]
 name = "jupiter-amm-interface"
-version = "0.6.1"
+version = "1.0.0"
 edition = "2024"
 rust-version = "1.85.0"
 description = "AMM interface to integrate a DEX into jupiter-core"
