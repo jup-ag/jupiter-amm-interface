@@ -1,7 +1,6 @@
 use {
+    ::serde::{Deserialize, Serialize},
     rust_decimal::Decimal,
-    serde::{Deserialize, Serialize},
-    serde_json::Value,
     solana_account::{Account, ReadableAccount},
     solana_account_decoder::{UiAccount, UiAccountEncoding, encode_ui_account},
     solana_clock::Clock,
@@ -22,7 +21,7 @@ use {
     },
     thiserror::Error,
 };
-mod custom_serde;
+pub mod serde;
 mod swap;
 pub use swap::{
     AccountsType, CandidateSwap, RemainingAccountsInfo, RemainingAccountsSlice, Side, Swap,
@@ -116,18 +115,18 @@ pub struct SwapAndAccountMetas {
 pub struct KeyedAccount {
     pub key: Pubkey,
     pub account: Account,
-    pub params: Option<Value>,
+    pub params: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Market {
-    #[serde(with = "custom_serde::field_as_string")]
+    #[serde(with = "serde::field_as_string")]
     pub pubkey: Pubkey,
-    #[serde(with = "custom_serde::field_as_string")]
+    #[serde(with = "serde::field_as_string")]
     pub owner: Pubkey,
     /// Additional data an Amm requires, Amm dependent and decoded in the Amm implementation
-    pub params: Option<Value>,
+    pub params: Option<serde_json::Value>,
 }
 
 impl From<KeyedAccount> for Market {
@@ -152,7 +151,7 @@ pub struct KeyedUiAccount {
     #[serde(flatten)]
     pub ui_account: UiAccount,
     /// Additional data an Amm requires, Amm dependent and decoded in the Amm implementation
-    pub params: Option<Value>,
+    pub params: Option<serde_json::Value>,
 }
 
 impl From<KeyedAccount> for KeyedUiAccount {
