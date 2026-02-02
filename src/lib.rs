@@ -28,21 +28,25 @@ pub use swap::{
     AccountsType, CandidateSwap, RemainingAccountsInfo, RemainingAccountsSlice, Side, Swap,
 };
 
-#[derive(Serialize, Deserialize, PartialEq, Clone, Copy, Default, Debug)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Deserialize, Serialize)]
 pub enum SwapMode {
     #[default]
     ExactIn,
     ExactOut,
 }
 
-impl FromStr for SwapMode {
-    type Err = anyhow::Error;
+#[derive(Debug, Error)]
+#[error("{0} is not a valid SwapMode")]
+pub struct SwapModeParseError(String);
 
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        match s {
+impl FromStr for SwapMode {
+    type Err = SwapModeParseError;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        match value {
             "ExactIn" => Ok(SwapMode::ExactIn),
             "ExactOut" => Ok(SwapMode::ExactOut),
-            _ => anyhow::bail!("{} is not a valid SwapMode", s),
+            _ => Err(SwapModeParseError(value.to_string())),
         }
     }
 }
@@ -106,6 +110,93 @@ impl SwapParams<'_, '_> {
 pub struct SwapAndAccountMetas {
     pub swap: Swap,
     pub account_metas: Vec<AccountMeta>,
+}
+
+#[derive(Clone, Deserialize, Serialize)]
+pub struct KeyedAccount {
+    pub key: Pubkey,
+    pub account: Account,
+    pub params: Option<Value>,
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Market {
+    #[serde(with = "custom_serde::field_as_string")]
+    pub pubkey: Pubkey,
+    #[serde(with = "custom_serde::field_as_string")]
+    pub owner: Pubkey,
+    /// Additional data an Amm requires, Amm dependent and decoded in the Amm implementation
+    pub params: Option<Value>,
+}
+
+impl From<KeyedAccount> for Market {
+    fn from(
+        KeyedAccount {
+            key,
+            account,
+            params,
+        }: KeyedAccount,
+    ) -> Self {
+        Market {
+            pubkey: key,
+            owner: account.owner,
+            params,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+pub struct KeyedUiAccount {
+    pub pubkey: String,
+    #[serde(flatten)]
+    pub ui_account: UiAccount,
+    /// Additional data an Amm requires, Amm dependent and decoded in the Amm implementation
+    pub params: Option<Value>,
+}
+
+impl From<KeyedAccount> for KeyedUiAccount {
+    fn from(
+        KeyedAccount {
+            key,
+            account,
+            params,
+        }: KeyedAccount,
+    ) -> Self {
+        KeyedUiAccount {
+            pubkey: key.to_string(),
+            ui_account: encode_ui_account(&key, &account, UiAccountEncoding::Base64, None, None),
+            params,
+        }
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum KeyedAccountConversionError {
+    #[error("Failed to parse pubkey: {0}")]
+    ParsePubkey(#[from] solana_pubkey::ParsePubkeyError),
+    #[error("Failed to decode ui_account for {0}")]
+    DecodeAccount(String),
+}
+
+impl TryFrom<KeyedUiAccount> for KeyedAccount {
+    type Error = KeyedAccountConversionError;
+
+    fn try_from(
+        KeyedUiAccount {
+            pubkey,
+            ui_account,
+            params,
+        }: KeyedUiAccount,
+    ) -> Result<Self, Self::Error> {
+        Ok(KeyedAccount {
+            key: Pubkey::from_str(&pubkey)?,
+            account: ui_account
+                .decode()
+                .ok_or(KeyedAccountConversionError::DecodeAccount(pubkey))?,
+            params,
+        })
+    }
 }
 
 pub trait AccountProvider {
@@ -323,88 +414,6 @@ macro_rules! single_program_amm {
             const LABEL: &'static str = $label;
         }
     };
-}
-
-#[derive(Clone, Deserialize, Serialize)]
-pub struct KeyedAccount {
-    pub key: Pubkey,
-    pub account: Account,
-    pub params: Option<Value>,
-}
-
-#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct Market {
-    #[serde(with = "custom_serde::field_as_string")]
-    pub pubkey: Pubkey,
-    #[serde(with = "custom_serde::field_as_string")]
-    pub owner: Pubkey,
-    /// Additional data an Amm requires, Amm dependent and decoded in the Amm implementation
-    pub params: Option<Value>,
-}
-
-impl From<KeyedAccount> for Market {
-    fn from(
-        KeyedAccount {
-            key,
-            account,
-            params,
-        }: KeyedAccount,
-    ) -> Self {
-        Market {
-            pubkey: key,
-            owner: account.owner,
-            params,
-        }
-    }
-}
-
-#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
-pub struct KeyedUiAccount {
-    pub pubkey: String,
-    #[serde(flatten)]
-    pub ui_account: UiAccount,
-    /// Additional data an Amm requires, Amm dependent and decoded in the Amm implementation
-    pub params: Option<Value>,
-}
-
-impl From<KeyedAccount> for KeyedUiAccount {
-    fn from(keyed_account: KeyedAccount) -> Self {
-        let KeyedAccount {
-            key,
-            account,
-            params,
-        } = keyed_account;
-
-        let ui_account = encode_ui_account(&key, &account, UiAccountEncoding::Base64, None, None);
-
-        KeyedUiAccount {
-            pubkey: key.to_string(),
-            ui_account,
-            params,
-        }
-    }
-}
-
-impl TryFrom<KeyedUiAccount> for KeyedAccount {
-    type Error = anyhow::Error;
-
-    fn try_from(keyed_ui_account: KeyedUiAccount) -> Result<Self, Self::Error> {
-        let KeyedUiAccount {
-            pubkey,
-            ui_account,
-            params,
-        } = keyed_ui_account;
-        let account = ui_account
-            .decode()
-            .unwrap_or_else(|| panic!("Failed to decode ui_account for {pubkey}"));
-
-        Ok(KeyedAccount {
-            key: Pubkey::from_str(&pubkey)?,
-            account,
-            params,
-        })
-    }
 }
 
 #[derive(Default)]

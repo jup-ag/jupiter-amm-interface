@@ -9,7 +9,6 @@ license = "Apache-2.0"
 keywords = ["solana", "jupiter", "aggregator"]
 
 [dependencies]
-anyhow = "1.0.100"
 ahash = "0.8.12"
 rust_decimal = "1.36.0"
 serde = "1.0.197"
