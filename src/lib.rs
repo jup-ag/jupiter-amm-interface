@@ -11,6 +11,7 @@ use {
     std::{
         collections::{HashMap, HashSet},
         convert::TryFrom,
+        ops::Deref,
         str::FromStr,
         sync::{
             Arc,
@@ -121,11 +122,6 @@ pub fn try_get_account_data_and_owner<'a>(
         .get(address)
         .with_context(|| format!("Could not find address: {address}"))?;
     Ok((account.data.as_slice(), &account.owner))
-}
-
-#[derive(Default)]
-pub struct AmmContext {
-    pub clock_ref: ClockRef,
 }
 
 pub trait Amm {
@@ -310,15 +306,31 @@ impl TryFrom<KeyedUiAccount> for KeyedAccount {
     }
 }
 
-#[derive(Default, Clone)]
-pub struct ClockRef {
-    pub slot: Arc<AtomicU64>,
+#[derive(Default)]
+pub struct AmmContext {
+    pub clock_ref: ClockRef,
+}
+
+#[derive(Default)]
+pub struct ClockData {
+    pub slot: AtomicU64,
     /// The timestamp of the first `Slot` in this `Epoch`.
-    pub epoch_start_timestamp: Arc<AtomicI64>,
+    pub epoch_start_timestamp: AtomicI64,
     /// The current `Epoch`.
-    pub epoch: Arc<AtomicU64>,
-    pub leader_schedule_epoch: Arc<AtomicU64>,
-    pub unix_timestamp: Arc<AtomicI64>,
+    pub epoch: AtomicU64,
+    pub leader_schedule_epoch: AtomicU64,
+    pub unix_timestamp: AtomicI64,
+}
+
+#[derive(Default, Clone)]
+pub struct ClockRef(Arc<ClockData>);
+
+impl Deref for ClockRef {
+    type Target = ClockData;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
 }
 
 impl ClockRef {
@@ -336,13 +348,13 @@ impl ClockRef {
 
 impl From<Clock> for ClockRef {
     fn from(clock: Clock) -> Self {
-        ClockRef {
-            epoch: Arc::new(AtomicU64::new(clock.epoch)),
-            epoch_start_timestamp: Arc::new(AtomicI64::new(clock.epoch_start_timestamp)),
-            leader_schedule_epoch: Arc::new(AtomicU64::new(clock.leader_schedule_epoch)),
-            slot: Arc::new(AtomicU64::new(clock.slot)),
-            unix_timestamp: Arc::new(AtomicI64::new(clock.unix_timestamp)),
-        }
+        ClockRef(Arc::new(ClockData {
+            epoch: AtomicU64::new(clock.epoch),
+            epoch_start_timestamp: AtomicI64::new(clock.epoch_start_timestamp),
+            leader_schedule_epoch: AtomicU64::new(clock.leader_schedule_epoch),
+            slot: AtomicU64::new(clock.slot),
+            unix_timestamp: AtomicI64::new(clock.unix_timestamp),
+        }))
     }
 }
 
