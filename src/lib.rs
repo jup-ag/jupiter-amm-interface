@@ -4,13 +4,11 @@ use {
     serde::{Deserialize, Serialize},
     serde_json::Value,
     solana_account::Account,
-    solana_account_decoder::{UiAccount, UiAccountEncoding, encode_ui_account},
     solana_clock::Clock,
     solana_instruction::AccountMeta,
     solana_pubkey::Pubkey,
     std::{
         collections::{HashMap, HashSet},
-        convert::TryFrom,
         ops::Deref,
         str::FromStr,
         sync::{
@@ -19,6 +17,7 @@ use {
         },
     },
 };
+
 mod custom_serde;
 mod swap;
 pub use swap::{
@@ -255,54 +254,6 @@ impl From<KeyedAccount> for Market {
             owner: account.owner,
             params,
         }
-    }
-}
-
-#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
-pub struct KeyedUiAccount {
-    pub pubkey: String,
-    #[serde(flatten)]
-    pub ui_account: UiAccount,
-    /// Additional data an Amm requires, Amm dependent and decoded in the Amm implementation
-    pub params: Option<Value>,
-}
-
-impl From<KeyedAccount> for KeyedUiAccount {
-    fn from(keyed_account: KeyedAccount) -> Self {
-        let KeyedAccount {
-            key,
-            account,
-            params,
-        } = keyed_account;
-
-        let ui_account = encode_ui_account(&key, &account, UiAccountEncoding::Base64, None, None);
-
-        KeyedUiAccount {
-            pubkey: key.to_string(),
-            ui_account,
-            params,
-        }
-    }
-}
-
-impl TryFrom<KeyedUiAccount> for KeyedAccount {
-    type Error = Error;
-
-    fn try_from(keyed_ui_account: KeyedUiAccount) -> Result<Self, Self::Error> {
-        let KeyedUiAccount {
-            pubkey,
-            ui_account,
-            params,
-        } = keyed_ui_account;
-        let account = ui_account
-            .decode()
-            .unwrap_or_else(|| panic!("Failed to decode ui_account for {pubkey}"));
-
-        Ok(KeyedAccount {
-            key: Pubkey::from_str(&pubkey)?,
-            account,
-            params,
-        })
     }
 }
 
