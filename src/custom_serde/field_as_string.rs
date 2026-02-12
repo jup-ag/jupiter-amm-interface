@@ -1,6 +1,5 @@
 use {
-    serde::{de, Deserializer, Serializer},
-    serde::{Deserialize, Serialize},
+    serde::{Deserialize, Deserializer, Serialize, Serializer, de},
     std::str::FromStr,
 };
 

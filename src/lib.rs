@@ -1,20 +1,25 @@
-use anyhow::{anyhow, Context, Error, Result};
-use rust_decimal::Decimal;
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
-use solana_account::Account;
-use solana_account_decoder::{encode_ui_account, UiAccount, UiAccountEncoding};
-use solana_clock::Clock;
-use solana_instruction::AccountMeta;
-use solana_pubkey::Pubkey;
-use std::collections::HashSet;
-
-use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
-use std::sync::Arc;
-use std::{collections::HashMap, convert::TryFrom, str::FromStr};
+use {
+    anyhow::{Context, Error, Result, anyhow},
+    rust_decimal::Decimal,
+    serde::{Deserialize, Serialize},
+    serde_json::Value,
+    solana_account::Account,
+    solana_account_decoder::{UiAccount, UiAccountEncoding, encode_ui_account},
+    solana_clock::Clock,
+    solana_instruction::AccountMeta,
+    solana_pubkey::Pubkey,
+    std::{
+        collections::{HashMap, HashSet},
+        convert::TryFrom,
+        str::FromStr,
+        sync::{
+            Arc,
+            atomic::{AtomicI64, AtomicU64, Ordering},
+        },
+    },
+};
 mod custom_serde;
 mod swap;
-use custom_serde::field_as_string;
 pub use swap::{
     AccountsType, CandidateSwap, RemainingAccountsInfo, RemainingAccountsSlice, Side, Swap,
 };
@@ -233,9 +238,9 @@ pub struct KeyedAccount {
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Market {
-    #[serde(with = "field_as_string")]
+    #[serde(with = "custom_serde::field_as_string")]
     pub pubkey: Pubkey,
-    #[serde(with = "field_as_string")]
+    #[serde(with = "custom_serde::field_as_string")]
     pub owner: Pubkey,
     /// Additional data an Amm requires, Amm dependent and decoded in the Amm implementation
     pub params: Option<Value>,
@@ -343,8 +348,7 @@ impl From<Clock> for ClockRef {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use solana_pubkey::pubkey;
+    use {super::*, solana_pubkey::pubkey};
 
     #[test]
     fn test_market_deserialization() {
