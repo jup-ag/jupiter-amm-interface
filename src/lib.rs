@@ -105,8 +105,16 @@ pub struct SwapAndAccountMetas {
     pub account_metas: Vec<AccountMeta>,
 }
 
+#[derive(Debug, Error)]
+#[error("Could not find address: {0}")]
+pub struct AccountNotFoundError(Pubkey);
+
 pub trait AccountProvider {
     fn get(&self, pubkey: &Pubkey) -> Option<impl ReadableAccount + use<'_, Self>>;
+
+    fn try_get(&self, pubkey: &Pubkey) -> Result<impl ReadableAccount, AccountNotFoundError> {
+        self.get(pubkey).ok_or(AccountNotFoundError(*pubkey))
+    }
 }
 
 impl<V, S: BuildHasher> AccountProvider for HashMap<Pubkey, V, S>
@@ -117,19 +125,6 @@ where
     fn get(&self, pubkey: &Pubkey) -> Option<impl ReadableAccount + use<'_, V, S>> {
         HashMap::get(self, pubkey).map(Deref::deref)
     }
-}
-
-#[derive(Debug, Error)]
-#[error("Could not find address: {0}")]
-pub struct AccountNotFoundError(Pubkey);
-
-pub fn try_get_account<'a>(
-    account_provider: &'a impl AccountProvider,
-    address: &Pubkey,
-) -> Result<impl ReadableAccount + 'a, AccountNotFoundError> {
-    account_provider
-        .get(address)
-        .ok_or(AccountNotFoundError(*address))
 }
 
 pub trait Amm: Clone {
