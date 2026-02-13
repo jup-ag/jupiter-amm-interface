@@ -1,6 +1,6 @@
 use {
     super::parse_value,
-    ::serde::{Deserialize, Deserializer, Serialize, Serializer},
+    serde::{Deserialize, Deserializer, Serialize, Serializer},
     std::str::FromStr,
 };
 
