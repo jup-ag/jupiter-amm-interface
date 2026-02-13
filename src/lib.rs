@@ -1,13 +1,14 @@
 use {
-    anyhow::{Context, Error, Result, anyhow},
+    anyhow::{Result, anyhow},
     rust_decimal::Decimal,
     serde::{Deserialize, Serialize},
-    solana_account::Account,
+    solana_account::{Account, ReadableAccount},
     solana_clock::Clock,
     solana_instruction::AccountMeta,
     solana_pubkey::Pubkey,
     std::{
         collections::{HashMap, HashSet},
+        hash::BuildHasher,
         ops::Deref,
         str::FromStr,
         sync::{
@@ -15,6 +16,7 @@ use {
             atomic::{AtomicI64, AtomicU64, Ordering},
         },
     },
+    thiserror::Error,
 };
 
 pub mod serde_utils;
@@ -31,7 +33,7 @@ pub enum SwapMode {
 }
 
 impl FromStr for SwapMode {
-    type Err = Error;
+    type Err = anyhow::Error;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         match s {
@@ -103,41 +105,55 @@ pub struct SwapAndAccountMetas {
     pub account_metas: Vec<AccountMeta>,
 }
 
-pub type AccountMap = HashMap<Pubkey, Account, ahash::RandomState>;
-
-pub fn try_get_account_data<'a>(account_map: &'a AccountMap, address: &Pubkey) -> Result<&'a [u8]> {
-    account_map
-        .get(address)
-        .map(|account| account.data.as_slice())
-        .with_context(|| format!("Could not find address: {address}"))
+pub trait AccountProvider {
+    fn get(&self, pubkey: &Pubkey) -> Option<impl ReadableAccount + use<'_, Self>>;
 }
 
-pub fn try_get_account_data_and_owner<'a>(
-    account_map: &'a AccountMap,
+impl<V, S: BuildHasher> AccountProvider for HashMap<Pubkey, V, S>
+where
+    V: Deref,
+    V::Target: ReadableAccount,
+{
+    fn get(&self, pubkey: &Pubkey) -> Option<impl ReadableAccount + use<'_, V, S>> {
+        HashMap::get(self, pubkey).map(Deref::deref)
+    }
+}
+
+#[derive(Debug, Error)]
+#[error("Could not find address: {0}")]
+pub struct AccountNotFoundError(Pubkey);
+
+pub fn try_get_account<'a>(
+    account_provider: &'a impl AccountProvider,
     address: &Pubkey,
-) -> Result<(&'a [u8], &'a Pubkey)> {
-    let account = account_map
+) -> Result<impl ReadableAccount + 'a, AccountNotFoundError> {
+    account_provider
         .get(address)
-        .with_context(|| format!("Could not find address: {address}"))?;
-    Ok((account.data.as_slice(), &account.owner))
+        .ok_or(AccountNotFoundError(*address))
 }
 
-pub trait Amm {
+pub trait Amm: Clone {
     fn from_keyed_account(keyed_account: &KeyedAccount, amm_context: &AmmContext) -> Result<Self>
     where
         Self: Sized;
+
     /// A human readable label of the underlying DEX
     fn label(&self) -> String;
+
     fn program_id(&self) -> Pubkey;
+
     /// The pool state or market state address
     fn key(&self) -> Pubkey;
+
     /// The mints that can be traded
     fn get_reserve_mints(&self) -> Vec<Pubkey>;
+
     /// The accounts necessary to produce a quote
     fn get_accounts_to_update(&self) -> Vec<Pubkey>;
+
     /// Picks necessary accounts to update it's internal state
     /// Heavy deserialization and precomputation caching should be done in this function
-    fn update(&mut self, account_map: &AccountMap) -> Result<()>;
+    fn update(&mut self, account_provider: impl AccountProvider) -> Result<()>;
 
     fn quote(&self, quote_params: &QuoteParams) -> Result<Quote>;
 
@@ -158,8 +174,6 @@ pub trait Amm {
     fn supports_exact_out(&self) -> bool {
         false
     }
-
-    fn clone_amm(&self) -> Box<dyn Amm + Send + Sync>;
 
     /// It can only trade in one direction from its first mint to second mint, assuming it is a two mint AMM
     fn unidirectional(&self) -> bool {
@@ -188,12 +202,6 @@ pub trait Amm {
     /// If the market is active at all
     fn is_active(&self) -> bool {
         true
-    }
-}
-
-impl Clone for Box<dyn Amm + Send + Sync> {
-    fn clone(&self) -> Box<dyn Amm + Send + Sync> {
-        self.clone_amm()
     }
 }
 
