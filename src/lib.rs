@@ -116,6 +116,12 @@ pub trait AccountProvider {
     }
 }
 
+impl<'a, T: AccountProvider> AccountProvider for &'a T {
+    fn get(&self, pubkey: &Pubkey) -> Option<impl ReadableAccount + use<'_, 'a, T>> {
+        T::get(self, pubkey)
+    }
+}
+
 impl<V, S: BuildHasher> AccountProvider for HashMap<Pubkey, V, S>
 where
     V: Deref,
