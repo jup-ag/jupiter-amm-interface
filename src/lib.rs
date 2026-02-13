@@ -1,5 +1,4 @@
 use {
-    anyhow::{Result, anyhow},
     rust_decimal::Decimal,
     serde::{Deserialize, Serialize},
     solana_account::{Account, ReadableAccount},
@@ -39,7 +38,7 @@ impl FromStr for SwapMode {
         match s {
             "ExactIn" => Ok(SwapMode::ExactIn),
             "ExactOut" => Ok(SwapMode::ExactOut),
-            _ => Err(anyhow!("{} is not a valid SwapMode", s)),
+            _ => Err(anyhow::anyhow!("{} is not a valid SwapMode", s)),
         }
     }
 }
@@ -128,7 +127,10 @@ where
 }
 
 pub trait Amm: Clone {
-    fn from_keyed_account(keyed_account: &KeyedAccount, amm_context: &AmmContext) -> Result<Self>
+    fn from_keyed_account(
+        keyed_account: &KeyedAccount,
+        amm_context: &AmmContext,
+    ) -> anyhow::Result<Self>
     where
         Self: Sized;
 
@@ -148,12 +150,15 @@ pub trait Amm: Clone {
 
     /// Picks necessary accounts to update it's internal state
     /// Heavy deserialization and precomputation caching should be done in this function
-    fn update(&mut self, account_provider: impl AccountProvider) -> Result<()>;
+    fn update(&mut self, account_provider: impl AccountProvider) -> anyhow::Result<()>;
 
-    fn quote(&self, quote_params: &QuoteParams) -> Result<Quote>;
+    fn quote(&self, quote_params: &QuoteParams) -> anyhow::Result<Quote>;
 
     /// Indicates which Swap has to be performed along with all the necessary account metas
-    fn get_swap_and_account_metas(&self, swap_params: &SwapParams) -> Result<SwapAndAccountMetas>;
+    fn get_swap_and_account_metas(
+        &self,
+        swap_params: &SwapParams,
+    ) -> anyhow::Result<SwapAndAccountMetas>;
 
     /// Indicates if get_accounts_to_update might return a non constant vec
     fn has_dynamic_accounts(&self) -> bool {
