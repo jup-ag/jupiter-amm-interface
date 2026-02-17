@@ -1,5 +1,3 @@
-use anyhow::anyhow;
-
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Side {
     Bid,
@@ -219,8 +217,12 @@ pub enum CandidateSwap {
     },
 }
 
+#[derive(Debug, thiserror::Error)]
+#[error("Swap {0:?} is not a valid candidate swap")]
+pub struct InvalidCandidateSwapError(Swap);
+
 impl TryInto<CandidateSwap> for Swap {
-    type Error = anyhow::Error;
+    type Error = InvalidCandidateSwapError;
 
     fn try_into(self) -> Result<CandidateSwap, Self::Error> {
         let candidate_swap = match self {
@@ -239,7 +241,7 @@ impl TryInto<CandidateSwap> for Swap {
                 swap_id,
                 is_base_to_quote,
             },
-            _ => return Err(anyhow!("Swap {self:?} is not a valid candidate swap")),
+            _ => return Err(InvalidCandidateSwapError(self)),
         };
         Ok(candidate_swap)
     }

@@ -4,10 +4,12 @@ use {
     solana_account::{Account, ReadableAccount},
     solana_clock::Clock,
     solana_instruction::AccountMeta,
+    solana_program_error::ProgramError,
     solana_pubkey::Pubkey,
     std::{
         collections::{HashMap, HashSet},
         hash::BuildHasher,
+        io,
         ops::Deref,
         str::FromStr,
         sync::{
@@ -31,14 +33,18 @@ pub enum SwapMode {
     ExactOut,
 }
 
-impl FromStr for SwapMode {
-    type Err = anyhow::Error;
+#[derive(Debug, Error)]
+#[error("{0} is not a valid SwapMode")]
+pub struct SwapModeParseError(String);
 
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        match s {
+impl FromStr for SwapMode {
+    type Err = SwapModeParseError;
+
+    fn from_str(value: &str) -> std::result::Result<Self, Self::Err> {
+        match value {
             "ExactIn" => Ok(SwapMode::ExactIn),
             "ExactOut" => Ok(SwapMode::ExactOut),
-            _ => Err(anyhow::anyhow!("{} is not a valid SwapMode", s)),
+            _ => Err(SwapModeParseError(value.to_string())),
         }
     }
 }
@@ -132,12 +138,98 @@ where
     }
 }
 
+#[derive(Debug, Error)]
+pub enum AmmFromKeyedAccountError {
+    #[error(transparent)]
+    Io(#[from] io::Error),
+    #[error(transparent)]
+    Json(#[from] serde_json::Error),
+    #[error("{0}")]
+    Custom(String),
+}
+
+impl From<&str> for AmmFromKeyedAccountError {
+    fn from(value: &str) -> Self {
+        Self::Custom(value.to_string())
+    }
+}
+
+impl From<String> for AmmFromKeyedAccountError {
+    fn from(value: String) -> Self {
+        Self::Custom(value)
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum AmmUpdateError {
+    #[error(transparent)]
+    AccountNotFound(#[from] AccountNotFoundError),
+    #[error(transparent)]
+    Io(#[from] io::Error),
+    #[error(transparent)]
+    Program(#[from] ProgramError),
+    #[error("{0}")]
+    Custom(String),
+}
+
+impl From<&str> for AmmUpdateError {
+    fn from(value: &str) -> Self {
+        Self::Custom(value.to_string())
+    }
+}
+
+impl From<String> for AmmUpdateError {
+    fn from(value: String) -> Self {
+        Self::Custom(value)
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum AmmQuoteError {
+    #[error(transparent)]
+    Io(#[from] io::Error),
+    #[error("{0}")]
+    Custom(String),
+}
+
+impl From<&str> for AmmQuoteError {
+    fn from(value: &str) -> Self {
+        Self::Custom(value.to_string())
+    }
+}
+
+impl From<String> for AmmQuoteError {
+    fn from(value: String) -> Self {
+        Self::Custom(value)
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum AmmGetSwapAndAccountMetasError {
+    #[error(transparent)]
+    Io(#[from] io::Error),
+    #[error("{0}")]
+    Custom(String),
+}
+
+impl From<&str> for AmmGetSwapAndAccountMetasError {
+    fn from(value: &str) -> Self {
+        Self::Custom(value.to_string())
+    }
+}
+
+impl From<String> for AmmGetSwapAndAccountMetasError {
+    fn from(value: String) -> Self {
+        Self::Custom(value)
+    }
+}
+
 pub trait Amm: Clone {
     /// Deserializes on-chain account data and optional params into an AMM instance
     fn from_keyed_account(
         keyed_account: &KeyedAccount,
         amm_context: &AmmContext,
-    ) -> anyhow::Result<Self>
+    ) -> Result<Self, AmmFromKeyedAccountError>
     where
         Self: Sized;
 
@@ -158,16 +250,16 @@ pub trait Amm: Clone {
 
     /// Picks necessary accounts to update it's internal state
     /// Heavy deserialization and precomputation caching should be done in this function
-    fn update(&mut self, account_provider: impl AccountProvider) -> anyhow::Result<()>;
+    fn update(&mut self, account_provider: impl AccountProvider) -> Result<(), AmmUpdateError>;
 
     /// Computes the expected token amounts and fees for a swap without executing it
-    fn quote(&self, quote_params: &QuoteParams) -> anyhow::Result<Quote>;
+    fn quote(&self, quote_params: &QuoteParams) -> Result<Quote, AmmQuoteError>;
 
     /// Indicates which Swap has to be performed along with all the necessary account metas
     fn get_swap_and_account_metas(
         &self,
         swap_params: &SwapParams,
-    ) -> anyhow::Result<SwapAndAccountMetas>;
+    ) -> Result<SwapAndAccountMetas, AmmGetSwapAndAccountMetasError>;
 
     /// Indicates if get_accounts_to_update might return a non constant vec
     fn has_dynamic_accounts(&self) -> bool {
