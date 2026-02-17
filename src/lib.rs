@@ -6,7 +6,7 @@ use {
     solana_instruction::AccountMeta,
     solana_pubkey::Pubkey,
     std::{
-        collections::{HashMap, HashSet},
+        collections::{HashMap, HashSet, hash_map::RandomState},
         hash::BuildHasher,
         ops::Deref,
         str::FromStr,
@@ -68,9 +68,12 @@ pub struct Quote {
     pub fee_pct: Decimal,
 }
 
-pub type QuoteMintToReferrer<S> = HashMap<Pubkey, Pubkey, S>;
+pub type QuoteMintToReferrer<S = RandomState> = HashMap<Pubkey, Pubkey, S>;
 
-pub struct SwapParams<'a, 'b, S> {
+pub struct SwapParams<'a, 'b, S = RandomState>
+where
+    S: BuildHasher,
+{
     pub swap_mode: SwapMode,
     pub in_amount: u64,
     pub out_amount: u64,
@@ -91,7 +94,7 @@ pub struct SwapParams<'a, 'b, S> {
     pub missing_dynamic_accounts_as_default: bool,
 }
 
-impl<S> SwapParams<'_, '_, S> {
+impl<S: BuildHasher> SwapParams<'_, '_, S> {
     /// A placeholder to indicate an optional account or used as a terminator when consuming remaining accounts
     /// Using the jupiter program id
     pub fn placeholder_account_meta(&self) -> AccountMeta {
@@ -164,7 +167,7 @@ pub trait Amm: Clone {
     fn quote(&self, quote_params: &QuoteParams) -> anyhow::Result<Quote>;
 
     /// Indicates which Swap has to be performed along with all the necessary account metas
-    fn get_swap_and_account_metas<S>(
+    fn get_swap_and_account_metas<S: BuildHasher>(
         &self,
         swap_params: &SwapParams<S>,
     ) -> anyhow::Result<SwapAndAccountMetas>;
