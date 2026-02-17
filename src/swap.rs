@@ -219,7 +219,7 @@ pub enum CandidateSwap {
 
 #[derive(Debug, thiserror::Error)]
 #[error("Swap {0:?} is not a valid candidate swap")]
-pub struct InvalidCandidateSwapError(Swap);
+pub struct InvalidCandidateSwapError(pub Swap);
 
 impl TryInto<CandidateSwap> for Swap {
     type Error = InvalidCandidateSwapError;
