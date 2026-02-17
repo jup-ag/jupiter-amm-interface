@@ -133,6 +133,7 @@ where
 }
 
 pub trait Amm: Clone {
+    /// Deserializes on-chain account data and optional params into an AMM instance
     fn from_keyed_account(
         keyed_account: &KeyedAccount,
         amm_context: &AmmContext,
@@ -141,8 +142,9 @@ pub trait Amm: Clone {
         Self: Sized;
 
     /// A human readable label of the underlying DEX
-    fn label(&self) -> String;
+    fn label(&self) -> AmmLabel;
 
+    /// The on-chain program that owns this AMM's accounts and executes its swaps
     fn program_id(&self) -> Pubkey;
 
     /// The pool state or market state address
@@ -158,6 +160,7 @@ pub trait Amm: Clone {
     /// Heavy deserialization and precomputation caching should be done in this function
     fn update(&mut self, account_provider: impl AccountProvider) -> anyhow::Result<()>;
 
+    /// Computes the expected token amounts and fees for a swap without executing it
     fn quote(&self, quote_params: &QuoteParams) -> anyhow::Result<Quote>;
 
     /// Indicates which Swap has to be performed along with all the necessary account metas
@@ -231,7 +234,7 @@ macro_rules! single_program_amm {
     ($amm_struct:ty, $program_id:expr, $label:expr) => {
         impl SingleProgramAmm for $amm_struct {
             const PROGRAM_ID: Pubkey = $program_id;
-            const LABEL: &'static str = $label;
+            const LABEL: AmmLabel = $label;
         }
     };
 }
