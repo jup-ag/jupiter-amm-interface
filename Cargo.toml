@@ -18,3 +18,4 @@ solana-account = { version = "3.4.0", features = ["serde"] }
 solana-clock = "3.0.0"
 solana-instruction = "3.1.0"
 solana-pubkey = "4.0.0"
+thiserror = "2.0.18"
