@@ -9,7 +9,6 @@ license = "Apache-2.0"
 keywords = ["solana", "jupiter", "aggregator"]
 
 [dependencies]
-ahash = "0.8"
 anyhow = "1"
 rust_decimal = "1.36.0"
 serde = { version = "1.0.197", features = ["derive"] }

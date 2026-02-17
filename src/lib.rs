@@ -68,9 +68,9 @@ pub struct Quote {
     pub fee_pct: Decimal,
 }
 
-pub type QuoteMintToReferrer = HashMap<Pubkey, Pubkey, ahash::RandomState>;
+pub type QuoteMintToReferrer<S> = HashMap<Pubkey, Pubkey, S>;
 
-pub struct SwapParams<'a, 'b> {
+pub struct SwapParams<'a, 'b, S> {
     pub swap_mode: SwapMode,
     pub in_amount: u64,
     pub out_amount: u64,
@@ -84,14 +84,14 @@ pub struct SwapParams<'a, 'b> {
     pub user: Pubkey,
     /// The payer for extra SOL that is required for needed accounts in the swap.
     pub payer: Pubkey,
-    pub quote_mint_to_referrer: Option<&'a QuoteMintToReferrer>,
+    pub quote_mint_to_referrer: Option<&'a QuoteMintToReferrer<S>>,
     pub jupiter_program_id: &'b Pubkey,
     /// Instead of returning the relevant Err, replace dynamic accounts with the default Pubkey
     /// This is useful for crawling market with no tick array
     pub missing_dynamic_accounts_as_default: bool,
 }
 
-impl SwapParams<'_, '_> {
+impl<S> SwapParams<'_, '_, S> {
     /// A placeholder to indicate an optional account or used as a terminator when consuming remaining accounts
     /// Using the jupiter program id
     pub fn placeholder_account_meta(&self) -> AccountMeta {
@@ -164,9 +164,9 @@ pub trait Amm: Clone {
     fn quote(&self, quote_params: &QuoteParams) -> anyhow::Result<Quote>;
 
     /// Indicates which Swap has to be performed along with all the necessary account metas
-    fn get_swap_and_account_metas(
+    fn get_swap_and_account_metas<S>(
         &self,
-        swap_params: &SwapParams,
+        swap_params: &SwapParams<S>,
     ) -> anyhow::Result<SwapAndAccountMetas>;
 
     /// Indicates if get_accounts_to_update might return a non constant vec
