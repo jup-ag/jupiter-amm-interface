@@ -139,86 +139,26 @@ where
 }
 
 #[derive(Debug, Error)]
-pub enum AmmFromKeyedAccountError {
-    #[error(transparent)]
-    Io(#[from] io::Error),
-    #[error(transparent)]
-    Json(#[from] serde_json::Error),
-    #[error("{0}")]
-    Custom(String),
-}
-
-impl From<&str> for AmmFromKeyedAccountError {
-    fn from(value: &str) -> Self {
-        Self::Custom(value.to_string())
-    }
-}
-
-impl From<String> for AmmFromKeyedAccountError {
-    fn from(value: String) -> Self {
-        Self::Custom(value)
-    }
-}
-
-#[derive(Debug, Error)]
-pub enum AmmUpdateError {
+pub enum AmmError {
     #[error(transparent)]
     AccountNotFound(#[from] AccountNotFoundError),
     #[error(transparent)]
     Io(#[from] io::Error),
+    #[error(transparent)]
+    Json(#[from] serde_json::Error),
     #[error(transparent)]
     Program(#[from] ProgramError),
     #[error("{0}")]
     Custom(String),
 }
 
-impl From<&str> for AmmUpdateError {
+impl From<&str> for AmmError {
     fn from(value: &str) -> Self {
         Self::Custom(value.to_string())
     }
 }
 
-impl From<String> for AmmUpdateError {
-    fn from(value: String) -> Self {
-        Self::Custom(value)
-    }
-}
-
-#[derive(Debug, Error)]
-pub enum AmmQuoteError {
-    #[error(transparent)]
-    Io(#[from] io::Error),
-    #[error("{0}")]
-    Custom(String),
-}
-
-impl From<&str> for AmmQuoteError {
-    fn from(value: &str) -> Self {
-        Self::Custom(value.to_string())
-    }
-}
-
-impl From<String> for AmmQuoteError {
-    fn from(value: String) -> Self {
-        Self::Custom(value)
-    }
-}
-
-#[derive(Debug, Error)]
-pub enum AmmGetSwapAndAccountMetasError {
-    #[error(transparent)]
-    Io(#[from] io::Error),
-    #[error("{0}")]
-    Custom(String),
-}
-
-impl From<&str> for AmmGetSwapAndAccountMetasError {
-    fn from(value: &str) -> Self {
-        Self::Custom(value.to_string())
-    }
-}
-
-impl From<String> for AmmGetSwapAndAccountMetasError {
+impl From<String> for AmmError {
     fn from(value: String) -> Self {
         Self::Custom(value)
     }
@@ -229,7 +169,7 @@ pub trait Amm: Clone {
     fn from_keyed_account(
         keyed_account: &KeyedAccount,
         amm_context: &AmmContext,
-    ) -> Result<Self, AmmFromKeyedAccountError>
+    ) -> Result<Self, AmmError>
     where
         Self: Sized;
 
@@ -250,16 +190,16 @@ pub trait Amm: Clone {
 
     /// Picks necessary accounts to update it's internal state
     /// Heavy deserialization and precomputation caching should be done in this function
-    fn update(&mut self, account_provider: impl AccountProvider) -> Result<(), AmmUpdateError>;
+    fn update(&mut self, account_provider: impl AccountProvider) -> Result<(), AmmError>;
 
     /// Computes the expected token amounts and fees for a swap without executing it
-    fn quote(&self, quote_params: &QuoteParams) -> Result<Quote, AmmQuoteError>;
+    fn quote(&self, quote_params: &QuoteParams) -> Result<Quote, AmmError>;
 
     /// Indicates which Swap has to be performed along with all the necessary account metas
     fn get_swap_and_account_metas(
         &self,
         swap_params: &SwapParams,
-    ) -> Result<SwapAndAccountMetas, AmmGetSwapAndAccountMetasError>;
+    ) -> Result<SwapAndAccountMetas, AmmError>;
 
     /// Indicates if get_accounts_to_update might return a non constant vec
     fn has_dynamic_accounts(&self) -> bool {
