@@ -10,12 +10,12 @@ keywords = ["solana", "jupiter", "aggregator"]
 
 [dependencies]
 ahash = "0.8"
-anyhow = "1"
 rust_decimal = "1.36.0"
 serde = { version = "1.0.197", features = ["derive"] }
 serde_json = "1.0.114"
 solana-account = { version = "3.4.0", features = ["serde"] }
 solana-clock = "3.0.0"
 solana-instruction = "3.1.0"
+solana-program-error = "3.0.0"
 solana-pubkey = "4.0.0"
 thiserror = "2.0.18"
