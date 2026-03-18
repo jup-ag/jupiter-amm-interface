@@ -40,6 +40,7 @@ pub enum Swap {
     HeliumTreasuryManagementRedeemV0,
     StakeDexStakeWrappedSol,
     MeteoraDlmm,
+    CipherDlmm,
     OpenBookV2 {
         side: Side,
     },
