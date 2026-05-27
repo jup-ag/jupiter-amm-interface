@@ -14,6 +14,7 @@ pub enum Swap {
     Crema {
         a_to_b: bool,
     },
+    Cube,
     Mercurial,
     Aldrin {
         side: Side,
