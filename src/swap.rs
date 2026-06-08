@@ -176,6 +176,9 @@ pub enum Swap {
     GoonFiV2 {
         is_bid: bool,
     },
+    ImanTrampa {
+        a_to_b: bool,
+    },
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
