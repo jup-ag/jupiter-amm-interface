@@ -176,6 +176,17 @@ pub enum Swap {
     GoonFiV2 {
         is_bid: bool,
     },
+    /// For AMMs that are not integrated into Jupiter yet and so have no variant in this
+    /// enum. SDKs return it while testing with `jupiter-amm-test-kit` and decode it in
+    /// their own swap encoder.
+    ///
+    /// Like every variant's fields, `data` should hold the minimal decision bits for a
+    /// swap — an operation tag, a direction flag — not instruction bytes. Jupiter cannot
+    /// route this variant; an integrated AMM gets its own variant, with `data`'s
+    /// contents as typed fields.
+    Placeholder {
+        data: Option<Vec<u8>>,
+    },
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
