@@ -176,6 +176,14 @@ pub enum Swap {
     GoonFiV2 {
         is_bid: bool,
     },
+    /// For AMMs that are not integrated into Jupiter yet and so have no variant in this enum.
+    ///
+    /// `data` should hold the minimal decision bits for a swap — an operation tag, a direction
+    /// flag. As much as possible, do the bulk of the instruction data construction in the swap
+    /// encoder instead.
+    Placeholder {
+        data: Option<Vec<u8>>,
+    },
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
