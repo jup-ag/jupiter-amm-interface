@@ -13,14 +13,21 @@
 //! Swap, with the constant-product + fee math vendored inline (the `spl-token-swap`
 //! crate is stuck on an old Solana generation and won't compile here).
 
-use jupiter_amm_interface::{
-    AccountProvider, Amm, AmmContext, AmmError, AmmLabel, KeyedAccount, Quote, QuoteParams,
-    SingleProgramAmm, Swap, SwapAndAccountMetas, SwapParams, single_program_amm,
+// The Solana types come from `jupiter_amm_interface::solana`, not from `solana-*`
+// dependencies of this crate — that is all an `Amm` impl needs, and it is what keeps an
+// integrator's tree on one Solana generation.
+use {
+    jupiter_amm_interface::{
+        AccountProvider, Amm, AmmContext, AmmError, AmmLabel, KeyedAccount, Quote, QuoteParams,
+        SingleProgramAmm, Swap, SwapAndAccountMetas, SwapParams, single_program_amm,
+        solana::{
+            account::ReadableAccount,
+            instruction::AccountMeta,
+            pubkey::{Pubkey, pubkey},
+        },
+    },
+    jupiter_amm_test_kit::{PoolTest, assert_pool_parity},
 };
-use jupiter_amm_test_kit::{PoolTest, assert_pool_parity};
-use solana_account::ReadableAccount;
-use solana_instruction::AccountMeta;
-use solana_pubkey::{Pubkey, pubkey};
 
 const SPL_TOKEN_SWAP_PROGRAM: Pubkey = pubkey!("SwaPpA9LAaLfeLi3a68M4DjnLqgtticKg6CnyNwgAC8");
 const SOL_USDC_POOL: Pubkey = pubkey!("AmHUjHKfSFP34D4VgPsviFNjWrvTN761Yazvv2eKAsSz");

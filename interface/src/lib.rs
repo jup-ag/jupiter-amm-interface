@@ -20,6 +20,34 @@ use {
     thiserror::Error,
 };
 
+/// Re-exports of the Solana crates that appear in this crate's public API.
+///
+/// An `Amm` implementation needs no `solana-*` dependencies of its own — take them from
+/// here instead. The `Pubkey`, `Account` and `AccountMeta` types are then guaranteed to be
+/// the ones the router links against, which is what avoids the usual
+/// two-generations-of-Solana dependency conflict.
+///
+/// The layout mirrors the old monolithic `solana_program`, so
+/// `solana_program::pubkey::Pubkey` becomes
+/// `jupiter_amm_interface::solana::pubkey::Pubkey`.
+///
+/// ```
+/// use jupiter_amm_interface::solana::{instruction::AccountMeta, pubkey::{Pubkey, pubkey}};
+///
+/// const USDC: Pubkey = pubkey!("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
+/// let meta = AccountMeta::new_readonly(USDC, false);
+/// ```
+pub mod solana {
+    pub use {
+        solana_account as account, solana_clock as clock, solana_instruction as instruction,
+        solana_program_error as program_error, solana_pubkey as pubkey,
+    };
+}
+
+/// The non-Solana crates in this crate's public API: `rust_decimal::Decimal`
+/// ([`Quote::fee_pct`]) and `serde_json::Value` ([`KeyedAccount::params`]).
+pub use {rust_decimal, serde_json};
+
 pub mod serde_utils;
 mod swap;
 pub use swap::{

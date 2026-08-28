@@ -1,0 +1,20 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "jupiter-amm-interface",
+  "description": "Jupiter DEX integration tooling for Claude Code.",
+  "owner": {
+    "name": "Jupiter"
+  },
+  "plugins": [
+    {
+      "name": "jupiter-amm",
+      "description": "Integrate a Solana DEX into Jupiter routing: implement the jupiter-amm-interface `Amm` trait and prove the quote matches the on-chain program with jupiter-amm-test-kit.",
+      "author": {
+        "name": "Jupiter"
+      },
+      "source": "./",
+      "category": "development",
+      "homepage": "https://github.com/jup-ag/jupiter-amm-interface"
+    }
+  ]
+}

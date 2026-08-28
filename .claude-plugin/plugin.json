@@ -1,0 +1,12 @@
+{
+  "name": "jupiter-amm",
+  "version": "0.1.0",
+  "description": "Integrate a Solana DEX into Jupiter routing: implement the jupiter-amm-interface `Amm` trait and prove the quote matches the on-chain program with jupiter-amm-test-kit.",
+  "author": {
+    "name": "Jupiter"
+  },
+  "homepage": "https://github.com/jup-ag/jupiter-amm-interface",
+  "repository": "https://github.com/jup-ag/jupiter-amm-interface",
+  "license": "Apache-2.0",
+  "keywords": ["solana", "jupiter", "dex", "amm", "rust"]
+}
