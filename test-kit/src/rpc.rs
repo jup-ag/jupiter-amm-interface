@@ -5,7 +5,7 @@
 use std::collections::{HashMap, HashSet};
 
 use base64::Engine;
-use jupiter_amm_interface::{Amm, AmmContext, ClockRef, KeyedAccount, SwapMode, SwapParams};
+use jupiter_amm_interface::{Amm, AmmContext, ClockRef, KeyedAccount, SwapParams};
 use solana_account::Account;
 use solana_clock::Clock;
 use solana_pubkey::Pubkey;
@@ -53,11 +53,14 @@ impl PoolSnapshot {
 
         let placeholder = Pubkey::new_unique();
         for swap in swaps {
+            let quote = swap
+                .quote(&probe)
+                .map_err(|e| RpcError(format!("quote: {e}")))?;
             let sam = probe
                 .get_swap_and_account_metas(&SwapParams {
-                    swap_mode: SwapMode::ExactIn,
-                    in_amount: swap.amount,
-                    out_amount: swap.amount,
+                    swap_mode: swap.swap_mode,
+                    in_amount: swap.input_amount(&quote),
+                    out_amount: quote.out_amount,
                     source_mint: swap.input_mint,
                     destination_mint: swap.output_mint,
                     source_token_account: placeholder,

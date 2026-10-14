@@ -1,0 +1,35 @@
+{
+  "program": "CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C",
+  "pool": "5odbv2a15FG6vtfnJRwQM2pYC8D6Q3jHqE6aj7NgQJ4N",
+  "mints": [
+    "So11111111111111111111111111111111111111112",
+    "H78X8fzErUhmr9XoBymqGnWU67rkReP1mvxHrA1vLxfN"
+  ],
+  "network": "mainnet-beta",
+  "rpc": "https://api.mainnet-beta.solana.com",
+  "snapshotDate": "2026-10-14",
+  "snapshotContextSlot": 456738541,
+  "snapshotClockSlot": 456738541,
+  "snapshotEpoch": 1057,
+  "token2022Mint": "H78X8fzErUhmr9XoBymqGnWU67rkReP1mvxHrA1vLxfN",
+  "scope": "Read-only finalized RPC snapshot of a mixed SPL Token / Token-2022 pool. Token-2022 transfer fee is 7%, capped at 1,000,000,000 atoms. Creator fees disabled. Reuses raydium_cpmm.so; native execution happens in LiteSVM.",
+  "accountSha256": {
+    "5odbv2a15FG6vtfnJRwQM2pYC8D6Q3jHqE6aj7NgQJ4N.bin": "28aa7bfc65bce58fcf7784da7d1504375ba38d5048b8ef66a7a201dbb117a1ff",
+    "D4FPEruKEHrG5TenZ2mpDGEfu1iUvTiqBxvpU8HLBvC2.bin": "7c092f4094da82267aa9c47785043e3cc55e9d3fffcc2438fe30606832e7d94e",
+    "EyN5kV4XMaHQL5ueCDn84VMAcAE6yLkpUViUnmiQ1Qa1.bin": "935236a6e5cefa1b82a06fb347e5090186169c8f443ba77bb4f27a3a9e51e52f",
+    "34xN13gyJF2SgyNjWLxc9CjdXUQw93KZEL3CNiXnyBnk.bin": "3ac0379ff66bc69631687a4fa5893abee12f85f0ea11cfcea79ed6ee1952d0aa",
+    "So11111111111111111111111111111111111111112.bin": "3190b38bdaed98cbfc5db2e4e5307d7fa6a8a2f5fa60f3042ad3dd7ecfe1d199",
+    "H78X8fzErUhmr9XoBymqGnWU67rkReP1mvxHrA1vLxfN.bin": "1f6f53d5494a89c337012e14d912fbb89e0966d382478b4164a1740842040a70",
+    "CKnE75Wywqm3kGCJ6p5CRR77VSC671vSrJZPcdCu7iu6.bin": "56853c82d55788211de580890d0cc6e5535f9da14002cba293bc1a740f5d9095",
+    "SysvarC1ock11111111111111111111111111111111.bin": "0ccf2b6ebffa51f3f17f5fb2fa38990ae024445a2239cc32176da3549b3198f1",
+    "SysvarLastRestartS1ot1111111111111111111111.bin": "37bbcaad9aa87ddd37883d81422a6f53f6e10618e3697ea1f5056a53386c0b4d",
+    "SysvarStakeHistory1111111111111111111111111.bin": "d48bc7f1c718fdea78275e56c49746a8d9c82fedc1ac73b15e837c00cf1e1a6f"
+  },
+  "programFixture": "raydium_cpmm.so",
+  "programSha256": "b6dbea8cefc2e7d490775ce6115e34a2ba480c0853c359e0bb4043b9381ef09a",
+  "tokenProgram": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+  "tokenProgramProvidedBy": "LiteSVM 0.14.0 embedded spl_token_2022-11.0.0.so",
+  "creatorFeesEnabled": false,
+  "transferFeeBasisPoints": 700,
+  "maximumTransferFeeAtoms": 1000000000
+}
