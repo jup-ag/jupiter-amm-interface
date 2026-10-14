@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
 use jupiter_amm_interface::{
-    Amm, AmmContext, ClockRef, KeyedAccount, QuoteParams, Swap, SwapAndAccountMetas, SwapMode,
-    SwapParams,
+    Amm, AmmContext, AmmError, ClockRef, KeyedAccount, Quote, QuoteParams, Swap,
+    SwapAndAccountMetas, SwapMode, SwapParams,
 };
 use solana_compute_budget_interface::ComputeBudgetInstruction;
 use solana_instruction::Instruction;
@@ -17,12 +17,43 @@ use crate::svm::{create_funded_ata, load_programs, pool_fixtures_dir, seed_svm, 
 const JUPITER_PROGRAM_ID: Pubkey =
     solana_pubkey::pubkey!("JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4");
 
-/// A single swap to assert: `amount` of `input_mint` into `output_mint`.
+/// A single swap to assert. `amount` is the input for ExactIn and the requested output
+/// for ExactOut, in token atoms.
 #[derive(Clone, Copy)]
 pub struct SwapTest {
     pub input_mint: Pubkey,
     pub output_mint: Pubkey,
     pub amount: u64,
+    pub swap_mode: SwapMode,
+}
+
+impl SwapTest {
+    /// Use the same mode and fixed-side validation when discovering accounts and executing.
+    pub(crate) fn quote(&self, amm: &impl Amm) -> Result<Quote, AmmError> {
+        if self.swap_mode == SwapMode::ExactOut && !amm.supports_exact_out() {
+            return Err(AmmError::from("AMM does not support ExactOut"));
+        }
+        let quote = amm.quote(&QuoteParams {
+            amount: self.amount,
+            input_mint: self.input_mint,
+            output_mint: self.output_mint,
+            swap_mode: self.swap_mode,
+            fee_mode: Default::default(),
+        })?;
+        if self.swap_mode == SwapMode::ExactOut && quote.out_amount != self.amount {
+            return Err(AmmError::from(
+                "ExactOut quote.out_amount does not match the requested output amount",
+            ));
+        }
+        Ok(quote)
+    }
+
+    pub(crate) fn input_amount(&self, quote: &Quote) -> u64 {
+        match self.swap_mode {
+            SwapMode::ExactIn => self.amount,
+            SwapMode::ExactOut => quote.in_amount,
+        }
+    }
 }
 
 /// A pool to verify: where its snapshot fixtures live and the swaps to assert on them.
@@ -54,6 +85,25 @@ impl PoolTest {
             input_mint,
             output_mint,
             amount,
+            swap_mode: SwapMode::ExactIn,
+        });
+        self
+    }
+
+    /// Add an ExactOut swap. `amount` is the requested output in atoms. The quote's
+    /// input amount is the budget: underquoting must fail, and overquoting is detected
+    /// by comparing the actual input debit with `quote.in_amount`.
+    pub fn add_exact_out_swap(
+        mut self,
+        input_mint: Pubkey,
+        output_mint: Pubkey,
+        amount: u64,
+    ) -> Self {
+        self.swaps.push(SwapTest {
+            input_mint,
+            output_mint,
+            amount,
+            swap_mode: SwapMode::ExactOut,
         });
         self
     }
@@ -71,7 +121,33 @@ impl PoolTest {
 /// Programs are loaded from `tests/fixtures/<name>.so`.
 /// For the amm, `<name>` is `Amm::label()` in snakecase (e.g. "SPL Token Swap" -> `spl_token_swap.so`).
 /// For `Amm::program_dependencies()`, the String is used as-is.
+///
+/// This entry point accepts ExactIn cases only. Use [`assert_pool_parity_with_swap_params`]
+/// for ExactOut or mixed-mode suites.
 pub fn assert_pool_parity<A: Amm>(test: &PoolTest, encoder: impl Fn(&Swap, u64) -> Vec<u8>) {
+    assert!(
+        test.swaps
+            .iter()
+            .all(|swap| swap.swap_mode == SwapMode::ExactIn),
+        "ExactOut swaps require assert_pool_parity_with_swap_params",
+    );
+    assert_pool_parity_with_swap_params::<A>(test, |swap, params| encoder(swap, params.in_amount));
+}
+
+/// Assert ExactIn and ExactOut swaps with a mode-aware native instruction encoder.
+///
+/// The encoder receives the same [`SwapParams`] used to discover account metas.
+/// For ExactIn, `in_amount` is the requested input and `out_amount` is the quote's
+/// output. For ExactOut, `out_amount` is the requested output and `in_amount` is the
+/// quote's maximum input budget. Encode the program's native exact-output instruction;
+/// sending an exact-input swap for the quoted input is not an ExactOut test.
+///
+/// Both modes compare the output balance delta with the quote. ExactOut also compares
+/// the input debit with `quote.in_amount` and rejects AMMs without ExactOut support.
+pub fn assert_pool_parity_with_swap_params<A: Amm>(
+    test: &PoolTest,
+    encoder: impl Fn(&Swap, &SwapParams<'_, '_>) -> Vec<u8>,
+) {
     assert!(!test.swaps.is_empty(), "PoolTest has no swaps to assert");
 
     // Missing fixtures are JIT snapshotted when `RPC` is set.
@@ -118,8 +194,10 @@ fn assert_swap_parity<A: Amm>(
     snapshot: &PoolSnapshot,
     programs: &[(Pubkey, Vec<u8>)],
     swap_test: &SwapTest,
-    encoder: &impl Fn(&Swap, u64) -> Vec<u8>,
+    encoder: &impl Fn(&Swap, &SwapParams<'_, '_>) -> Vec<u8>,
 ) {
+    let quote = swap_test.quote(amm).expect("quote");
+    let in_amount = swap_test.input_amount(&quote);
     let mut svm = seed_svm(snapshot, programs);
 
     let user = Keypair::new();
@@ -127,56 +205,42 @@ fn assert_swap_parity<A: Amm>(
     svm.airdrop(&user_pk, 100 * 1_000_000_000)
         .expect("airdrop user");
     // The user swaps between their ATAs. The source is seeded with exactly the swap's
-    // input; a program that pulls more than `in_amount` fails the transaction instead of
-    // draining a padded balance.
-    let source_token_account = create_funded_ata(
-        &mut svm,
-        snapshot,
-        &swap_test.input_mint,
-        &user,
-        swap_test.amount,
-    );
+    // input budget; a program that pulls more fails instead of draining a padded balance.
+    let source_token_account =
+        create_funded_ata(&mut svm, snapshot, &swap_test.input_mint, &user, in_amount);
     let destination_token_account =
         create_funded_ata(&mut svm, snapshot, &swap_test.output_mint, &user, 0);
 
-    let quote = amm
-        .quote(&QuoteParams {
-            amount: swap_test.amount,
-            input_mint: swap_test.input_mint,
-            output_mint: swap_test.output_mint,
-            swap_mode: SwapMode::ExactIn,
-            fee_mode: Default::default(),
-        })
-        .expect("quote");
-
+    let swap_params = SwapParams {
+        swap_mode: swap_test.swap_mode,
+        in_amount,
+        out_amount: quote.out_amount,
+        source_mint: swap_test.input_mint,
+        destination_mint: swap_test.output_mint,
+        source_token_account,
+        destination_token_account,
+        token_transfer_authority: user_pk,
+        user: user_pk,
+        payer: user_pk,
+        quote_mint_to_referrer: None,
+        jupiter_program_id: &JUPITER_PROGRAM_ID,
+        missing_dynamic_accounts_as_default: false,
+    };
     let SwapAndAccountMetas {
         swap,
         account_metas,
     } = amm
-        .get_swap_and_account_metas(&SwapParams {
-            swap_mode: SwapMode::ExactIn,
-            in_amount: swap_test.amount,
-            out_amount: swap_test.amount,
-            source_mint: swap_test.input_mint,
-            destination_mint: swap_test.output_mint,
-            source_token_account,
-            destination_token_account,
-            token_transfer_authority: user_pk,
-            user: user_pk,
-            payer: user_pk,
-            quote_mint_to_referrer: None,
-            jupiter_program_id: &JUPITER_PROGRAM_ID,
-            missing_dynamic_accounts_as_default: false,
-        })
+        .get_swap_and_account_metas(&swap_params)
         .expect("get_swap_and_account_metas");
 
     let swap_ix = Instruction {
         program_id: amm.program_id(),
         accounts: account_metas,
-        data: encoder(&swap, swap_test.amount),
+        data: encoder(&swap, &swap_params),
     };
 
     let out_before = token_amount(&svm, &destination_token_account);
+    let in_before = token_amount(&svm, &source_token_account);
 
     let ixs = [
         ComputeBudgetInstruction::set_compute_unit_limit(1_400_000),
@@ -187,10 +251,21 @@ fn assert_swap_parity<A: Amm>(
     svm.send_transaction(tx)
         .expect("native swap transaction succeeds");
 
-    let out_delta = token_amount(&svm, &destination_token_account) - out_before;
+    let out_delta = token_amount(&svm, &destination_token_account)
+        .checked_sub(out_before)
+        .expect("destination balance decreased");
 
     assert_eq!(
         quote.out_amount, out_delta,
         "quote.out_amount does not match the on-chain output delta",
     );
+    if swap_test.swap_mode == SwapMode::ExactOut {
+        let in_delta = in_before
+            .checked_sub(token_amount(&svm, &source_token_account))
+            .expect("source balance increased");
+        assert_eq!(
+            quote.in_amount, in_delta,
+            "quote.in_amount does not match the on-chain input debit",
+        );
+    }
 }
