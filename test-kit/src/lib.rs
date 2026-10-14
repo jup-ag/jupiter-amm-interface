@@ -16,9 +16,9 @@
 //! the program's native swap instruction data (discriminator + args).
 //! Everything else is derived from the trait.
 //!
-//! Note: only ExactIn swaps are asserted, and programs that reject top-level invocations
-//! (expecting a CPI from an approved integrator) are not yet supported. See the README's
-//! Limitations section for the full list.
+//! ExactOut swaps use [`assert_pool_parity_with_swap_params`] and a mode-aware encoder.
+//! Programs that reject top-level invocations (expecting a CPI from an approved
+//! integrator) are not yet supported. See the README's Limitations section.
 
 mod parity;
 #[cfg(feature = "rpc")]
@@ -26,7 +26,7 @@ mod rpc;
 mod snapshot;
 mod svm;
 
-pub use parity::{PoolTest, SwapTest, assert_pool_parity};
+pub use parity::{PoolTest, SwapTest, assert_pool_parity, assert_pool_parity_with_swap_params};
 #[cfg(feature = "rpc")]
 pub use rpc::{RpcError, fetch_account};
 pub use snapshot::PoolSnapshot;
