@@ -106,8 +106,8 @@ The kit intentionally covers the common case first; today that means:
 - **Plain token accounts.** The user's accounts are freshly created ATAs; token-2022
   mints work, but transfer logic that needs extra per-account state (e.g. transfer-hook
   side accounts) may not.
-- **Defaults for the rest.** `FeeMode::Normal`, no referrer, and the SVM clock pinned to
-  the snapshot moment.
+- **Defaults for the rest.** `FlowType::Binary`, no referrer, and the SVM clock pinned to the
+  snapshot moment.
 
 If one of these is a blocker — or the kit isn't flexible enough in some other way —
 please [open an issue](https://github.com/jup-ag/jupiter-amm-interface/issues) or ask in

@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
 use jupiter_amm_interface::{
-    Amm, AmmContext, ClockRef, KeyedAccount, QuoteParams, Swap, SwapAndAccountMetas, SwapMode,
-    SwapParams,
+    Amm, AmmContext, ClockRef, FlowType, KeyedAccount, QuoteParams, Swap, SwapAndAccountMetas,
+    SwapMode, SwapParams,
 };
 use solana_compute_budget_interface::ComputeBudgetInstruction;
 use solana_instruction::Instruction;
@@ -145,7 +145,7 @@ fn assert_swap_parity<A: Amm>(
             input_mint: swap_test.input_mint,
             output_mint: swap_test.output_mint,
             swap_mode: SwapMode::ExactIn,
-            fee_mode: Default::default(),
+            flow_type: FlowType::default(),
         })
         .expect("quote");
 

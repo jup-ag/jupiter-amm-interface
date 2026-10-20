@@ -49,11 +49,32 @@ impl FromStr for SwapMode {
     }
 }
 
-#[derive(Default, Clone, Copy, Debug, PartialEq)]
-pub enum FeeMode {
+#[repr(u8)]
+#[derive(Default, Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum FlowType {
     #[default]
-    Normal,
-    Ultra,
+    Binary = 0,
+    Ultra = 1,
+    Manual = 2,
+    WhitelistedIntegrators = 3,
+    PaidApi = 4,
+    FreeApi = 5,
+}
+
+impl TryFrom<u8> for FlowType {
+    type Error = &'static str;
+
+    fn try_from(byte: u8) -> std::result::Result<Self, Self::Error> {
+        Ok(match byte {
+            0 => Self::Binary,
+            1 => Self::Ultra,
+            2 => Self::Manual,
+            3 => Self::WhitelistedIntegrators,
+            4 => Self::PaidApi,
+            5 => Self::FreeApi,
+            _ => return Err("invalid FlowType"),
+        })
+    }
 }
 
 #[derive(Debug)]
@@ -62,7 +83,7 @@ pub struct QuoteParams {
     pub input_mint: Pubkey,
     pub output_mint: Pubkey,
     pub swap_mode: SwapMode,
-    pub fee_mode: FeeMode,
+    pub flow_type: FlowType,
 }
 
 #[derive(Debug, Default, Clone, Copy)]
