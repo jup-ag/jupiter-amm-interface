@@ -1391,7 +1391,7 @@ dependencies = [
 
 [[package]]
 name = "jupiter-amm-interface"
-version = "0.6.1"
+version = "0.7.0"
 dependencies = [
  "ahash 0.8.12",
  "rust_decimal",
